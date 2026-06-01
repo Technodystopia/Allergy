@@ -41,6 +41,7 @@ class AppState extends ChangeNotifier {
   static const _kAlertHour = 'alert_hour';
   static const _kAlertMinute = 'alert_minute';
   static const _kLang = 'language';
+  static const _kDiary = 'symptom_diary';
 
   Set<String> _selected = {};
   String _homeId = 'helsinki';
@@ -52,6 +53,7 @@ class AppState extends ChangeNotifier {
   int alertHour = 7;
   int alertMinute = 0;
   AppLang _lang = AppLang.en;
+  List<SymptomEntry> _diary = [];
   AppLocation? _gpsLocation;
 
   /// True while a GPS fix is being acquired.
@@ -79,6 +81,43 @@ class AppState extends ChangeNotifier {
     _lang = lang;
     await prefs.setString(_kLang, lang == AppLang.fi ? 'fi' : 'en');
     notifyListeners();
+  }
+
+  /// Diary entries, most recent first.
+  List<SymptomEntry> get diary =>
+      [..._diary]..sort((a, b) => b.dayKey.compareTo(a.dayKey));
+
+  String _dayKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  SymptomEntry? get todayEntry {
+    final key = _dayKey(DateTime.now());
+    for (final e in _diary) {
+      if (e.dayKey == key) return e;
+    }
+    return null;
+  }
+
+  /// Logs (or replaces) today's symptom entry, snapshotting today's worst level.
+  Future<void> logToday(int severity, String note) async {
+    final key = _dayKey(DateTime.now());
+    final rank = worstToday()?.level.rank ?? -1;
+    _diary.removeWhere((e) => e.dayKey == key);
+    _diary.add(SymptomEntry(
+        dayKey: key, severity: severity, pollenRank: rank, note: note));
+    await _saveDiary();
+    notifyListeners();
+  }
+
+  Future<void> deleteDiaryEntry(String dayKey) async {
+    _diary.removeWhere((e) => e.dayKey == dayKey);
+    await _saveDiary();
+    notifyListeners();
+  }
+
+  Future<void> _saveDiary() async {
+    await prefs.setString(
+        _kDiary, json.encode(_diary.map((e) => e.toJson()).toList()));
   }
 
   PollenSource get currentSource =>
@@ -120,6 +159,17 @@ class AppState extends ChangeNotifier {
     alertHour = prefs.getInt(_kAlertHour) ?? 7;
     alertMinute = prefs.getInt(_kAlertMinute) ?? 0;
     _lang = (prefs.getString(_kLang) == 'fi') ? AppLang.fi : AppLang.en;
+
+    final diaryStr = prefs.getString(_kDiary);
+    if (diaryStr != null) {
+      try {
+        _diary = (json.decode(diaryStr) as List)
+            .map((e) => SymptomEntry.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } catch (_) {
+        _diary = [];
+      }
+    }
 
     final lat = prefs.getDouble(_kGpsLat);
     final lon = prefs.getDouble(_kGpsLon);

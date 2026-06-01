@@ -149,6 +149,30 @@ void main() {
     expect(reloaded.lang, AppLang.fi);
   });
 
+  test('diary entry logs, persists, and deletes', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final state = _state([FakeSource('openmeteo')], prefs);
+
+    await state.logToday(2, 'sneezy');
+    expect(state.todayEntry, isNotNull);
+    expect(state.todayEntry!.severity, 2);
+    expect(state.diary.length, 1);
+
+    // persists across instances
+    final reloaded = _state([FakeSource('openmeteo')], prefs);
+    expect(reloaded.diary.length, 1);
+    expect(reloaded.todayEntry!.note, 'sneezy');
+
+    // re-logging the same day replaces, not duplicates
+    await reloaded.logToday(0, '');
+    expect(reloaded.diary.length, 1);
+    expect(reloaded.todayEntry!.severity, 0);
+
+    await reloaded.deleteDiaryEntry(reloaded.todayEntry!.dayKey);
+    expect(reloaded.diary, isEmpty);
+  });
+
   test('allergen selection persists', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();

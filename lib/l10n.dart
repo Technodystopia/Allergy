@@ -115,6 +115,36 @@ class L10n {
   String get english => _('English', 'Englanti');
   String get finnish => _('Finnish', 'Suomi');
 
+  // --- diary ---
+  String get diary => _('Diary', 'Päiväkirja');
+  String get diaryHeader => _(
+      'Log how your allergies feel — and see it against the day’s pollen.',
+      'Kirjaa miltä allergiasi tuntuu — ja vertaa päivän siitepölyyn.');
+  String get diaryEmpty => _(
+      'No entries yet. Tap + to log how you feel today.',
+      'Ei merkintöjä. Napauta + kirjataksesi olosi tänään.');
+  String get logTitle => _('How do you feel today?', 'Miltä tänään tuntuu?');
+  String get noteHint => _('Note (optional)', 'Muistiinpano (valinnainen)');
+  String get save => _('Save', 'Tallenna');
+  String get logToday => _('Log today', 'Kirjaa tänään');
+  String get delete => _('Delete', 'Poista');
+  String pollenThatDay(String level) =>
+      _('Pollen: $level', 'Siitepöly: $level');
+  String get pollenUnknown => _('Pollen: n/a', 'Siitepöly: –');
+
+  String severity(int s) {
+    switch (s) {
+      case 0:
+        return _('No symptoms', 'Ei oireita');
+      case 1:
+        return _('Mild', 'Lieviä');
+      case 2:
+        return _('Moderate', 'Kohtalaisia');
+      default:
+        return _('Severe', 'Voimakkaita');
+    }
+  }
+
   // --- relative time ---
   String get justNow => _('just now', 'juuri nyt');
   String minAgo(int n) => _('$n min ago', '$n min sitten');

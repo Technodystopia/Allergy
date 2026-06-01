@@ -230,6 +230,35 @@ class DailyPollen {
   }
 }
 
+/// A user's symptom log for one day, with a snapshot of that day's worst
+/// pollen level (so symptoms can be read against exposure later).
+class SymptomEntry {
+  final String dayKey; // yyyy-MM-dd
+  final int severity; // 0 none · 1 mild · 2 moderate · 3 severe
+  final int pollenRank; // worst PollenLevel.rank that day at log time (-1 unknown)
+  final String note;
+  const SymptomEntry({
+    required this.dayKey,
+    required this.severity,
+    required this.pollenRank,
+    this.note = '',
+  });
+
+  Map<String, dynamic> toJson() => {
+        'day': dayKey,
+        'sev': severity,
+        'rank': pollenRank,
+        if (note.isNotEmpty) 'note': note,
+      };
+
+  factory SymptomEntry.fromJson(Map<String, dynamic> j) => SymptomEntry(
+        dayKey: j['day'] as String,
+        severity: j['sev'] as int,
+        pollenRank: (j['rank'] as int?) ?? -1,
+        note: (j['note'] as String?) ?? '',
+      );
+}
+
 /// Where an allergen is in its flowering cycle right now.
 enum BloomStage {
   dormant('Pre-season', 'Not flowering yet'),
