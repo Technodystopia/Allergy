@@ -117,4 +117,59 @@ time,station,lat,lon,cnc_POLLEN_BIRCH_m22[unit="number/m3"]
       expect(SilamSource.parseCsv('only,a,header\n', varToId, nowUtc: now), isEmpty);
     });
   });
+
+  group('Seasonal.worstForDay (background alert logic)', () {
+    final today = DateTime(2026, 6, 1);
+    final birch = _a('birch', om: 'birch_pollen');
+    final grass = _a('grass', om: 'grass_pollen');
+
+    DailyPollen day(int offset, double peak) => DailyPollen(
+        date: DateTime(today.year, today.month, today.day + offset),
+        peak: peak,
+        estimated: false);
+
+    test('picks the highest-ranked allergen for the requested day', () {
+      final forecast = {
+        'birch': [day(0, 5), day(1, 150)], // tomorrow: very high (>=1500? no) -> high (>=100)
+        'grass': [day(0, 200), day(1, 2)], // tomorrow: low
+      };
+      final worst = Seasonal.worstForDay(
+          allergens: [birch, grass],
+          forecast: forecast,
+          today: today,
+          dayOffset: 1);
+      expect(worst, isNotNull);
+      expect(worst!.allergen.id, 'birch');
+      expect(worst.level, PollenLevel.high); // 150 ≥ high(100), < veryHigh(1500)
+    });
+
+    test('today vs tomorrow select different days', () {
+      final forecast = {
+        'grass': [day(0, 200), day(1, 2)],
+      };
+      final t0 = Seasonal.worstForDay(
+          allergens: [grass], forecast: forecast, today: today, dayOffset: 0);
+      final t1 = Seasonal.worstForDay(
+          allergens: [grass], forecast: forecast, today: today, dayOffset: 1);
+      expect(t0!.level, PollenLevel.high); // 200 ≥ high(100), < veryHigh(1500)
+      expect(t1!.level.rank < t0.level.rank, true); // tomorrow calmer
+    });
+
+    test('falls back to seasonal estimate when no live day present', () {
+      // No live data → uses Seasonal estimate; June is in birch off-peak here.
+      final worst = Seasonal.worstForDay(
+          allergens: [birch], forecast: const {}, today: today, dayOffset: 1);
+      expect(worst, isNotNull); // never null when allergens given
+    });
+
+    test('returns null when no allergens', () {
+      expect(
+          Seasonal.worstForDay(
+              allergens: const [],
+              forecast: const {},
+              today: today,
+              dayOffset: 1),
+          isNull);
+    });
+  });
 }

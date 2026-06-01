@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'l10n.dart';
 import 'location_service.dart';
+import 'background.dart';
 import 'models.dart';
 import 'notification_service.dart';
 import 'services.dart';
@@ -19,6 +20,7 @@ class AppState extends ChangeNotifier {
   final LocationService locationService;
   final NotificationService notifications;
   final WidgetService widgetService;
+  final BackgroundService background;
 
   AppState({
     required this.catalog,
@@ -27,7 +29,9 @@ class AppState extends ChangeNotifier {
     required this.locationService,
     required this.notifications,
     WidgetService? widgetService,
-  }) : widgetService = widgetService ?? WidgetService() {
+    BackgroundService? background,
+  })  : widgetService = widgetService ?? WidgetService(),
+        background = background ?? BackgroundService() {
     _load();
   }
 
@@ -258,8 +262,10 @@ class AppState extends ChangeNotifier {
     if (on) {
       await notifications.requestPermission();
       await notifications.scheduleDaily(alertHour, alertMinute);
+      await background.enable(); // also check "high tomorrow" in the background
     } else {
       await notifications.cancelDaily();
+      await background.disable();
     }
     notifyListeners();
   }

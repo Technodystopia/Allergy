@@ -64,6 +64,11 @@ class L10n {
     return _('$level pollen today$a', '$level siitepölymäärä tänään$a');
   }
 
+  String tomorrowHeadline(String level, String? allergen) {
+    final a = allergen != null ? ' · $allergen' : '';
+    return _('$level pollen tomorrow$a', '$level siitepölymäärä huomenna$a');
+  }
+
   // --- bloom ---
   String get bloomHeader => _(
       'Flowering seasons for your allergens (southern Finland). The bar is the typical season; "right now" uses the live forecast.',

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_state.dart';
+import 'background.dart';
 import 'location_service.dart';
 import 'notification_service.dart';
 import 'screens/home_shell.dart';
@@ -15,12 +16,15 @@ Future<void> main() async {
   await initializeDateFormatting();
   final catalog = await Catalog.load();
   final prefs = await SharedPreferences.getInstance();
+  final background = BackgroundService();
+  await background.init();
   final state = AppState(
     catalog: catalog,
     sources: [OpenMeteoSource(), SilamSource()],
     prefs: prefs,
     locationService: LocationService(),
     notifications: NotificationService(),
+    background: background,
   );
   runApp(AllergyApp(state: state));
 }

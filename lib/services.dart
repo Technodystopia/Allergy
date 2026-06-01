@@ -306,4 +306,29 @@ class Seasonal {
 
   static String _key(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  /// The worst (allergen, level) across [allergens] for the day [dayOffset]
+  /// days after [today] (0 = today, 1 = tomorrow), blending the live forecast
+  /// with seasonal estimates. Returns null if no allergens are given.
+  static ({Allergen allergen, PollenLevel level})? worstForDay({
+    required List<Allergen> allergens,
+    required Map<String, List<DailyPollen>> forecast,
+    required DateTime today,
+    required int dayOffset,
+  }) {
+    Allergen? worstA;
+    var worst = PollenLevel.none;
+    for (final a in allergens) {
+      final series = sevenDaySeries(
+          allergen: a, live: forecast[a.id] ?? const [], today: today);
+      final day = (dayOffset < series.length) ? series[dayOffset] : series.last;
+      final lvl = a.thresholds.levelFor(day.peak);
+      if (lvl.rank >= worst.rank) {
+        worst = lvl;
+        worstA = a;
+      }
+    }
+    if (worstA == null) return null;
+    return (allergen: worstA, level: worst);
+  }
 }
