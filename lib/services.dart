@@ -94,6 +94,12 @@ class OpenMeteoSource implements PollenSource {
       throw Exception('Open-Meteo error ${resp.statusCode}');
     }
     final body = json.decode(resp.body) as Map<String, dynamic>;
+    return parseBody(body, live);
+  }
+
+  /// Pure parsing of an Open-Meteo air-quality response body. Exposed for tests.
+  static Map<String, List<DailyPollen>> parseBody(
+      Map<String, dynamic> body, List<Allergen> live) {
     final hourly = body['hourly'] as Map<String, dynamic>?;
     if (hourly == null) return {};
     final times = (hourly['time'] as List).cast<String>();
@@ -166,15 +172,18 @@ class SilamSource implements PollenSource {
     if (resp.statusCode != 200) {
       throw Exception('SILAM error ${resp.statusCode}');
     }
-    return _parseCsv(resp.body, varToId);
+    return parseCsv(resp.body, varToId);
   }
 
   static String _two(int n) => n.toString().padLeft(2, '0');
   static String _iso(DateTime d) =>
       '${d.year}-${_two(d.month)}-${_two(d.day)}T00:00:00Z';
 
-  Map<String, List<DailyPollen>> _parseCsv(
-      String body, Map<String, String> varToId) {
+  /// Parses a SILAM NCSS CSV response. [nowUtc] sets the "today onward" cutoff
+  /// (defaults to the real clock); exposed so tests can pin it.
+  static Map<String, List<DailyPollen>> parseCsv(
+      String body, Map<String, String> varToId,
+      {DateTime? nowUtc}) {
     final lines = body.split('\n').where((l) => l.trim().isNotEmpty).toList();
     if (lines.length < 2) return {};
 
@@ -205,7 +214,7 @@ class SilamSource implements PollenSource {
     }
 
     final byAllergenDay = <String, Map<String, double>>{};
-    final today = DateTime.now().toUtc();
+    final today = (nowUtc ?? DateTime.now()).toUtc();
     final cutoff = DateTime.utc(today.year, today.month, today.day);
 
     for (var i = 1; i < lines.length; i++) {
