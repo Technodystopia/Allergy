@@ -1,17 +1,27 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
+import '../l10n.dart';
 import '../models.dart';
 
 /// Base WMS URL for the SILAM pollen dataset (ncWMS / EDAL server).
 const _silamWmsBase =
     'https://thredds.silam.fmi.fi/thredds/wms/silam_europe_pollen_v6_1/silam_europe_pollen_v6_1_best.ncd?';
 
+/// Sequential yellow→orange→red palette — reads intuitively as low→high.
+const _palette = 'seq-YlOrRd';
+
+/// How many forecast days the day-slider offers (SILAM forecasts ~5 days).
+const _maxDayOffset = 4;
+
 /// A live SILAM pollen map: an OSM base layer with the SILAM concentration
-/// cloud for the chosen allergen overlaid as a WMS tile layer.
+/// cloud for the chosen allergen overlaid as a WMS tile layer, scrubable by day.
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -22,6 +32,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final _controller = MapController();
   String? _allergenId;
+  int _dayOffset = 0;
 
   @override
   void dispose() {
@@ -40,10 +51,25 @@ class _MapScreenState extends State<MapScreen> {
     return '${low.toStringAsFixed(0)},${a.thresholds.veryHigh.toStringAsFixed(0)}';
   }
 
+  /// WMS TIME value (UTC noon) for the chosen day offset.
+  String _timeIso(int offset) {
+    final n = DateTime.now();
+    final d = DateTime(n.year, n.month, n.day + offset);
+    String two(int x) => x.toString().padLeft(2, '0');
+    return '${d.year}-${two(d.month)}-${two(d.day)}T12:00:00Z';
+  }
+
+  String _dayLabel(int offset, L10n s) {
+    if (offset == 0) return s.todayLabel;
+    if (offset == 1) return s.tomorrow;
+    final d = DateTime.now().add(Duration(days: offset));
+    return DateFormat.E(s.isFi ? 'fi' : 'en').format(d);
+  }
+
   String _legendUrl(Allergen a) =>
       '${_silamWmsBase}request=GetLegendGraphic&layer=${a.silamVar}'
-      '&colorscalerange=${_scaleRange(a)}&logscale=true&palette=default'
-      '&numcolorbands=100&width=30&height=180&vertical=true';
+      '&colorscalerange=${_scaleRange(a)}&logscale=true&palette=$_palette'
+      '&numcolorbands=100&width=24&height=130&vertical=true&colorbaronly=true';
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +94,7 @@ class _MapScreenState extends State<MapScreen> {
 
     final loc = state.currentLocation;
     final here = LatLng(loc.lat, loc.lon);
+    final timeIso = _timeIso(_dayOffset);
 
     return Column(
       children: [
@@ -86,9 +113,30 @@ class _MapScreenState extends State<MapScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text('${a.emoji} ${s.allergenName(a).split(' · ').first}'),
+                    label:
+                        Text('${a.emoji} ${s.allergenName(a).split(' · ').first}'),
                     selected: a.id == active.id,
                     onSelected: (_) => setState(() => _allergenId = a.id),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        // Day selector (time scrub).
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            children: [
+              for (var d = 0; d <= _maxDayOffset; d++)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(_dayLabel(d, s)),
+                    selected: d == _dayOffset,
+                    visualDensity: VisualDensity.compact,
+                    onSelected: (_) => setState(() => _dayOffset = d),
                   ),
                 ),
             ],
@@ -111,15 +159,16 @@ class _MapScreenState extends State<MapScreen> {
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'fi.kamk.allergy',
                   ),
-                  // SILAM pollen overlay — keyed by layer so it reloads on switch.
+                  // SILAM pollen overlay — keyed by layer+time so it reloads
+                  // when the allergen or the chosen day changes.
                   Opacity(
                     opacity: 0.7,
                     child: TileLayer(
-                      key: ValueKey('silam-${active.silamVar}'),
+                      key: ValueKey('silam-${active.silamVar}-$timeIso'),
                       wmsOptions: WMSTileLayerOptions(
                         baseUrl: _silamWmsBase,
                         layers: [active.silamVar!],
-                        styles: const ['default-scalar/default'],
+                        styles: const ['default-scalar/$_palette'],
                         format: 'image/png',
                         transparent: true,
                         version: '1.3.0',
@@ -127,6 +176,7 @@ class _MapScreenState extends State<MapScreen> {
                           'COLORSCALERANGE': _scaleRange(active),
                           'LOGSCALE': 'true',
                           'NUMCOLORBANDS': '100',
+                          'TIME': timeIso,
                         },
                       ),
                       userAgentPackageName: 'fi.kamk.allergy',
@@ -164,15 +214,15 @@ class _MapScreenState extends State<MapScreen> {
                   child: const Icon(Icons.my_location),
                 ),
               ),
-              // Legend.
+              // Legend with severity thresholds.
               Positioned(
                 left: 12,
                 top: 12,
                 child: _Legend(
                   url: _legendUrl(active),
-                  lowLabel: active.thresholds.low.toStringAsFixed(0),
-                  highLabel: active.thresholds.veryHigh.toStringAsFixed(0),
+                  thresholds: active.thresholds,
                   unit: s.mapLegend,
+                  s: s,
                 ),
               ),
             ],
@@ -183,17 +233,40 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
+/// Floating legend: the WMS colour bar annotated with our severity-class
+/// thresholds (Low / Moderate / High / Very high) so "is *my* pollen high
+/// here" reads at a glance.
 class _Legend extends StatelessWidget {
-  final String url, lowLabel, highLabel, unit;
+  final String url, unit;
+  final Thresholds thresholds;
+  final L10n s;
   const _Legend({
     required this.url,
-    required this.lowLabel,
-    required this.highLabel,
+    required this.thresholds,
     required this.unit,
+    required this.s,
   });
+
+  static const _h = 130.0;
+
+  /// Distance from the top of the bar for a grains value (log scale).
+  double _top(double v) {
+    final lo = thresholds.low <= 0 ? 1.0 : thresholds.low;
+    final hi = thresholds.veryHigh;
+    if (hi <= lo) return 0;
+    final f = (math.log(v / lo) / math.log(hi / lo)).clamp(0.0, 1.0);
+    return (1 - f) * _h;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final ticks = <(double, PollenLevel)>[
+      (thresholds.veryHigh, PollenLevel.veryHigh),
+      (thresholds.high, PollenLevel.high),
+      (thresholds.moderate, PollenLevel.moderate),
+      (thresholds.low, PollenLevel.low),
+    ];
+
     return Card(
       elevation: 2,
       color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
@@ -201,31 +274,49 @@ class _Legend extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(unit, style: Theme.of(context).textTheme.labelSmall),
             const SizedBox(height: 2),
             Row(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Image.network(
                   url,
-                  width: 30,
-                  height: 120,
+                  width: 22,
+                  height: _h,
                   fit: BoxFit.fill,
                   errorBuilder: (_, e, st) =>
-                      const SizedBox(width: 30, height: 120),
+                      const SizedBox(width: 22, height: _h),
                 ),
                 const SizedBox(width: 4),
                 SizedBox(
-                  height: 120,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  width: 64,
+                  height: _h,
+                  child: Stack(
                     children: [
-                      Text(highLabel,
-                          style: Theme.of(context).textTheme.labelSmall),
-                      Text(lowLabel,
-                          style: Theme.of(context).textTheme.labelSmall),
+                      for (final (value, level) in ticks)
+                        Positioned(
+                          top: (_top(value) - 7).clamp(0.0, _h - 12),
+                          left: 0,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                    color: level.color,
+                                    shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(value.toStringAsFixed(0),
+                                  style:
+                                      Theme.of(context).textTheme.labelSmall),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
