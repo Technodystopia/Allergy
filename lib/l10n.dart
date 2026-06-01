@@ -15,6 +15,7 @@ class L10n {
   // --- navigation / shell ---
   String get today => _('Today', 'Tänään');
   String get bloom => _('Bloom', 'Kukinta');
+  String get map => _('Map', 'Kartta');
   String get reference => _('Reference', 'Tietopankki');
   String get tooltipSource => _('Data source', 'Tietolähde');
   String get tooltipFavourite => _('Switch to favourite', 'Vaihda suosikkiin');
@@ -70,6 +71,18 @@ class L10n {
   String get bloomNow => _('Right now', 'Juuri nyt');
   String get bloomLive => _('live', 'live');
   String get bloomModelEst => _('seasonal estimate', 'kausiarvio');
+
+  // --- map ---
+  String get mapHeader => _(
+      'Live SILAM pollen cloud over Finland. Pick an allergen; the colour shows airborne concentration right now.',
+      'SILAMin elävä siitepölypilvi Suomen yllä. Valitse allergeeni; väri näyttää pitoisuuden juuri nyt.');
+  String get mapNoSilam => _(
+      'None of your allergens have SILAM map coverage. Add e.g. birch, alder or grass.',
+      'Yhdelläkään allergeeneistasi ei ole SILAM-karttakattavuutta. Lisää esim. koivu, leppä tai heinä.');
+  String get mapLegend => _('grains/m³', 'kpl/m³');
+  String get mapMyLocation => _('You', 'Sinä');
+  String get mapLow => _('low', 'matala');
+  String get mapHigh => _('high', 'korkea');
 
   // --- reference ---
   String get refHeader => _(

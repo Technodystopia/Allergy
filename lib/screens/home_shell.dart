@@ -5,6 +5,7 @@ import '../app_state.dart';
 import 'bloom_screen.dart';
 import 'diary_screen.dart';
 import 'locations_screen.dart';
+import 'map_screen.dart';
 import 'reference_screen.dart';
 import 'settings_screen.dart';
 import 'today_screen.dart';
@@ -32,10 +33,11 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final s = state.s;
-    final titles = [s.today, s.bloom, s.diary, s.reference];
+    final titles = [s.today, s.bloom, s.map, s.diary, s.reference];
     final pages = const [
       TodayScreen(),
       BloomScreen(),
+      MapScreen(),
       DiaryScreen(),
       ReferenceScreen()
     ];
@@ -107,6 +109,10 @@ class _HomeShellState extends State<HomeShell> {
               icon: const Icon(Icons.timeline_outlined),
               selectedIcon: const Icon(Icons.timeline),
               label: s.bloom),
+          NavigationDestination(
+              icon: const Icon(Icons.map_outlined),
+              selectedIcon: const Icon(Icons.map),
+              label: s.map),
           NavigationDestination(
               icon: const Icon(Icons.event_note_outlined),
               selectedIcon: const Icon(Icons.event_note),
