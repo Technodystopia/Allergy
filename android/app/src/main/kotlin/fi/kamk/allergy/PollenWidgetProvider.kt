@@ -31,11 +31,14 @@ class PollenWidgetProvider : AppWidgetProvider() {
             val updated = data.getString("widget_updated", "")
             // Level accent colour (defaults to a calm grey-green).
             val color = data.getInt("widget_color", 0xFFB0BEC5.toInt())
+            val rank = data.getInt("widget_rank", -1)
 
             views.setTextViewText(R.id.widget_location, location)
             views.setTextViewText(R.id.widget_level, level)
             views.setTextViewText(R.id.widget_allergen, allergen)
             views.setTextViewText(R.id.widget_updated, updated)
+            views.setTextViewText(R.id.widget_rank, if (rank >= 0) rank.toString() else "–")
+            views.setTextColor(R.id.widget_rank, color)
             views.setTextColor(R.id.widget_level, color)
 
             // Tap the widget to open the app.

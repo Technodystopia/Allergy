@@ -37,6 +37,8 @@ class MainActivity : FlutterActivity() {
         prefs.putString("widget_level", call.argument("level"))
         prefs.putString("widget_allergen", call.argument("allergen"))
         prefs.putString("widget_updated", call.argument("updated"))
+        val rank: Number? = call.argument("rank")
+        if (rank != null) prefs.putInt("widget_rank", rank.toInt())
         // Dart sends the ARGB int as a Long (it exceeds 32-bit signed range),
         // so read it as a Number and narrow to Int (wraps to signed ARGB).
         val color: Number? = call.argument("color")

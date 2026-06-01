@@ -249,6 +249,56 @@ class SilamSource implements PollenSource {
   }
 }
 
+/// Free Open-Meteo weather forecast (no key) — current conditions + daily
+/// hi/lo, shown beside the pollen glance.
+class WeatherService {
+  static const _base = 'https://api.open-meteo.com/v1/forecast';
+
+  Future<Weather> fetch({required double lat, required double lon}) async {
+    final url = Uri.parse(_base).replace(queryParameters: {
+      'latitude': lat.toStringAsFixed(4),
+      'longitude': lon.toStringAsFixed(4),
+      'current': 'temperature_2m,weather_code',
+      'daily': 'temperature_2m_max,temperature_2m_min,weather_code',
+      'timezone': 'Europe/Helsinki',
+      'forecast_days': '7',
+    });
+    final resp = await http.get(url).timeout(const Duration(seconds: 15));
+    if (resp.statusCode != 200) {
+      throw Exception('Weather error ${resp.statusCode}');
+    }
+    return parseBody(json.decode(resp.body) as Map<String, dynamic>);
+  }
+
+  /// Pure parsing of an Open-Meteo forecast body. Exposed for tests.
+  static Weather parseBody(Map<String, dynamic> body) {
+    final cur = body['current'] as Map<String, dynamic>?;
+    final daily = body['daily'] as Map<String, dynamic>?;
+    final days = <DailyWeather>[];
+    if (daily != null) {
+      final times = (daily['time'] as List).cast<String>();
+      final maxs = (daily['temperature_2m_max'] as List);
+      final mins = (daily['temperature_2m_min'] as List);
+      final codes = (daily['weather_code'] as List);
+      for (var i = 0; i < times.length; i++) {
+        days.add(DailyWeather(
+          date: DateTime.parse(times[i]),
+          max: (maxs[i] as num).toDouble(),
+          min: (mins[i] as num).toDouble(),
+          code: (codes[i] as num).toInt(),
+        ));
+      }
+    }
+    return Weather(
+      tempC: ((cur?['temperature_2m'] ?? days.firstOrNull?.max ?? 0) as num)
+          .toDouble(),
+      code: ((cur?['weather_code'] ?? days.firstOrNull?.code ?? 0) as num)
+          .toInt(),
+      days: days,
+    );
+  }
+}
+
 /// Pure-logic seasonal model: bloom stage + climatological estimates used to
 /// extend the live forecast out to 7 days (and to power the bloom timeline).
 class Seasonal {

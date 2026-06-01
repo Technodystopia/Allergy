@@ -65,7 +65,15 @@ AppState _state(List<PollenSource> sources, SharedPreferences prefs) => AppState
       prefs: prefs,
       locationService: LocationService(),
       notifications: _NoopNotifications(),
+      weatherService: _NoopWeather(),
     );
+
+// Weather service that never touches the network in tests.
+class _NoopWeather extends WeatherService {
+  @override
+  Future<Weather> fetch({required double lat, required double lon}) async =>
+      throw Exception('no network in tests');
+}
 
 // NotificationService with no-op overrides so tests never touch the plugin.
 class _NoopNotifications extends NotificationService {

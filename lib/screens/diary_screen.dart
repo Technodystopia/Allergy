@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../models.dart';
+import '../widgets.dart';
 
 /// Colours for the 4 severity levels (green → red).
 const _sevColors = [
@@ -24,6 +25,7 @@ class DiaryScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
+          const _DiaryGlance(),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Text(s.diaryHeader),
@@ -55,10 +57,79 @@ class DiaryScreen extends StatelessWidget {
   }
 }
 
+/// Today's pollen and weather, side by side — the quick "what does today look
+/// like" glance at the top of the diary.
+class _DiaryGlance extends StatelessWidget {
+  const _DiaryGlance();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final s = state.s;
+    final worst = state.worstToday();
+    final level = worst?.level ?? PollenLevel.none;
+    final weather = state.weather;
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Pollen side.
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(s.pollenWord,
+                      style: Theme.of(context).textTheme.labelMedium),
+                  const SizedBox(height: 6),
+                  LevelDot(level, size: 40),
+                  const SizedBox(height: 4),
+                  Text(
+                    worst == null
+                        ? s.level(PollenLevel.none)
+                        : '${s.level(level)} · ${s.allergenName(worst.allergen).split(' · ').first}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(
+                height: 70, child: VerticalDivider(width: 24)),
+            // Weather side.
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(s.weatherWord,
+                      style: Theme.of(context).textTheme.labelMedium),
+                  const SizedBox(height: 6),
+                  if (weather != null)
+                    WeatherGlance(weather)
+                  else
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.cloud_off, size: 24),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 void _showLogSheet(BuildContext context, AppState state) {
   final s = state.s;
   final existing = state.todayEntry;
   int severity = existing?.severity ?? 1;
+  final areas = {...?existing?.areas};
   final noteCtrl = TextEditingController(text: existing?.note ?? '');
 
   showModalBottomSheet<void>(
@@ -73,45 +144,90 @@ void _showLogSheet(BuildContext context, AppState state) {
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
         ),
         child: StatefulBuilder(
-          builder: (ctx, setSheet) => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(s.logTitle, style: Theme.of(ctx).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                children: List.generate(4, (i) {
-                  final selected = severity == i;
-                  return ChoiceChip(
-                    label: Text(s.severity(i)),
-                    selected: selected,
-                    onSelected: (_) => setSheet(() => severity = i),
-                    selectedColor: _sevColors[i].withValues(alpha: 0.35),
-                  );
-                }),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: noteCtrl,
-                decoration: InputDecoration(
-                  labelText: s.noteHint,
-                  border: const OutlineInputBorder(),
+          builder: (ctx, setSheet) => SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(s.logTitle,
+                          style: Theme.of(ctx).textTheme.titleLarge),
+                    ),
+                    if (state.lastLoggedEntry != null)
+                      TextButton.icon(
+                        icon: const Icon(Icons.history, size: 18),
+                        label: Text(s.copyYesterday),
+                        onPressed: () => setSheet(() {
+                          final last = state.lastLoggedEntry!;
+                          severity = last.severity;
+                          areas
+                            ..clear()
+                            ..addAll(last.areas);
+                          noteCtrl.text = last.note;
+                        }),
+                      ),
+                  ],
                 ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton(
-                  onPressed: () async {
-                    await state.logToday(severity, noteCtrl.text.trim());
-                    if (ctx.mounted) Navigator.of(ctx).pop();
-                  },
-                  child: Text(s.save),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: List.generate(4, (i) {
+                    final selected = severity == i;
+                    return ChoiceChip(
+                      label: Text(s.severity(i)),
+                      selected: selected,
+                      onSelected: (_) => setSheet(() => severity = i),
+                      selectedColor: _sevColors[i].withValues(alpha: 0.35),
+                    );
+                  }),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(s.diaryAreasTitle,
+                    style: Theme.of(ctx).textTheme.labelLarge),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final id in state.enabledAreas)
+                      FilterChip(
+                        label: Text(s.area(id)),
+                        selected: areas.contains(id),
+                        onSelected: (on) => setSheet(() {
+                          if (on) {
+                            areas.add(id);
+                          } else {
+                            areas.remove(id);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: noteCtrl,
+                  decoration: InputDecoration(
+                    labelText: s.noteHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton(
+                    onPressed: () async {
+                      await state.logToday(severity, noteCtrl.text.trim(),
+                          areas: areas);
+                      if (ctx.mounted) Navigator.of(ctx).pop();
+                    },
+                    child: Text(s.save),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -132,6 +248,17 @@ class _EntryCard extends StatelessWidget {
             entry.pollenRank < PollenLevel.values.length)
         ? s.pollenThatDay(s.level(PollenLevel.values[entry.pollenRank]))
         : s.pollenUnknown;
+    final areaText = entry.areas.isEmpty
+        ? null
+        : kBodyAreas
+            .where(entry.areas.contains)
+            .map((a) => s.area(a))
+            .join(' · ');
+    final subtitle = [
+      pollen,
+      ?areaText,
+      if (entry.note.isNotEmpty) entry.note,
+    ].join('\n');
 
     return Card(
       child: ListTile(
@@ -140,9 +267,8 @@ class _EntryCard extends StatelessWidget {
           radius: 8,
         ),
         title: Text('${entry.dayKey} · ${s.severity(entry.severity)}'),
-        subtitle: Text(
-            '$pollen${entry.note.isNotEmpty ? '\n${entry.note}' : ''}'),
-        isThreeLine: entry.note.isNotEmpty,
+        subtitle: Text(subtitle),
+        isThreeLine: areaText != null || entry.note.isNotEmpty,
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
           tooltip: s.delete,

@@ -118,6 +118,40 @@ time,station,lat,lon,cnc_POLLEN_BIRCH_m22[unit="number/m3"]
     });
   });
 
+  group('WeatherService parseBody', () {
+    test('parses current + daily forecast', () {
+      final body = {
+        'current': {'temperature_2m': 14.0, 'weather_code': 3},
+        'daily': {
+          'time': ['2026-06-01', '2026-06-02'],
+          'temperature_2m_max': [17.7, 19.0],
+          'temperature_2m_min': [9.8, 11.0],
+          'weather_code': [3, 61],
+        }
+      };
+      final w = WeatherService.parseBody(body);
+      expect(w.tempC, 14.0);
+      expect(w.code, 3);
+      expect(w.days.length, 2);
+      expect(w.today!.max, 17.7);
+      expect(w.days[1].code, 61);
+    });
+
+    test('tolerates a missing current block', () {
+      final body = {
+        'daily': {
+          'time': ['2026-06-01'],
+          'temperature_2m_max': [20.0],
+          'temperature_2m_min': [10.0],
+          'weather_code': [0],
+        }
+      };
+      final w = WeatherService.parseBody(body);
+      expect(w.days.length, 1);
+      expect(w.tempC, 20.0); // falls back to day's max
+    });
+  });
+
   group('Seasonal.worstForDay (background alert logic)', () {
     final today = DateTime(2026, 6, 1);
     final birch = _a('birch', om: 'birch_pollen');

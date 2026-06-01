@@ -102,6 +102,55 @@ class Season {
   }
 }
 
+/// Current + daily weather (Open-Meteo forecast), shown beside pollen.
+class DailyWeather {
+  final DateTime date;
+  final double max, min;
+  final int code; // WMO weather code
+  const DailyWeather(
+      {required this.date,
+      required this.max,
+      required this.min,
+      required this.code});
+
+  Map<String, dynamic> toJson() => {
+        'd': date.toIso8601String(),
+        'max': max,
+        'min': min,
+        'c': code,
+      };
+
+  factory DailyWeather.fromJson(Map<String, dynamic> j) => DailyWeather(
+        date: DateTime.parse(j['d'] as String),
+        max: (j['max'] as num).toDouble(),
+        min: (j['min'] as num).toDouble(),
+        code: j['c'] as int,
+      );
+}
+
+class Weather {
+  final double tempC;
+  final int code;
+  final List<DailyWeather> days;
+  const Weather({required this.tempC, required this.code, required this.days});
+
+  DailyWeather? get today => days.isNotEmpty ? days.first : null;
+
+  Map<String, dynamic> toJson() => {
+        't': tempC,
+        'c': code,
+        'days': days.map((d) => d.toJson()).toList(),
+      };
+
+  factory Weather.fromJson(Map<String, dynamic> j) => Weather(
+        tempC: (j['t'] as num).toDouble(),
+        code: j['c'] as int,
+        days: ((j['days'] as List?) ?? const [])
+            .map((e) => DailyWeather.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
 class CrossReactions {
   final List<String> pollen;
   final List<String> foods;
@@ -245,16 +294,32 @@ class DailyPollen {
 
 /// A user's symptom log for one day, with a snapshot of that day's worst
 /// pollen level (so symptoms can be read against exposure later).
+/// Body areas a user can flag as bothered, in display order. Personalisable
+/// (the diary settings can hide ones you never use).
+const kBodyAreas = [
+  'general',
+  'eyes',
+  'nose',
+  'ears',
+  'mouth',
+  'throat',
+  'skin',
+  'lungs',
+  'bronchi',
+];
+
 class SymptomEntry {
   final String dayKey; // yyyy-MM-dd
   final int severity; // 0 none · 1 mild · 2 moderate · 3 severe
   final int pollenRank; // worst PollenLevel.rank that day at log time (-1 unknown)
   final String note;
+  final Set<String> areas; // bothered body areas (ids from kBodyAreas)
   const SymptomEntry({
     required this.dayKey,
     required this.severity,
     required this.pollenRank,
     this.note = '',
+    this.areas = const {},
   });
 
   Map<String, dynamic> toJson() => {
@@ -262,6 +327,7 @@ class SymptomEntry {
         'sev': severity,
         'rank': pollenRank,
         if (note.isNotEmpty) 'note': note,
+        if (areas.isNotEmpty) 'areas': areas.toList(),
       };
 
   factory SymptomEntry.fromJson(Map<String, dynamic> j) => SymptomEntry(
@@ -269,6 +335,7 @@ class SymptomEntry {
         severity: j['sev'] as int,
         pollenRank: (j['rank'] as int?) ?? -1,
         note: (j['note'] as String?) ?? '',
+        areas: ((j['areas'] as List?)?.cast<String>() ?? const []).toSet(),
       );
 }
 

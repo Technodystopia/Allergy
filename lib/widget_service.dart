@@ -27,6 +27,7 @@ class WidgetService {
         'allergen': allergenText,
         'updated': '${s.updated} ${_hhmm(DateTime.now())}',
         'color': level.color.toARGB32(),
+        'rank': level.rank,
       });
     } catch (_) {
       // No widget / unsupported platform — ignore.

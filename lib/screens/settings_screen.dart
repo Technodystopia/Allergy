@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../l10n.dart';
+import '../models.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -91,6 +92,22 @@ class SettingsScreen extends StatelessWidget {
               }
             },
           ),
+          const Divider(),
+          _Header(s.diaryAreasSettings),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: Text(s.diaryAreasSettingsSub,
+                style: Theme.of(context).textTheme.bodySmall),
+          ),
+          ...kBodyAreas.map((id) {
+            final on = state.enabledAreas.contains(id);
+            return SwitchListTile(
+              dense: true,
+              value: on,
+              onChanged: (v) => state.setDiaryArea(id, v),
+              title: Text(s.area(id)),
+            );
+          }),
           const Divider(),
           _Header(s.about),
           ListTile(

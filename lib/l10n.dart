@@ -44,6 +44,8 @@ class L10n {
   String get retry => _('Retry', 'Yritä uudelleen');
   String get todayLabel => _('Today', 'Tänään');
   String get tomorrow => _('Tomorrow', 'Huomenna');
+  String get todayCards => _('Cards', 'Kortit');
+  String get todayGrid => _('Grid', 'Ruudukko');
   String grains(int n) => _('$n grains/m³', '$n kpl/m³');
   String get estSuffix => _(' (est.)', ' (arvio)');
   String get show7 => _('Show 7 days', 'Näytä 7 päivää');
@@ -178,6 +180,38 @@ class L10n {
   String pollenThatDay(String level) =>
       _('Pollen: $level', 'Siitepöly: $level');
   String get pollenUnknown => _('Pollen: n/a', 'Siitepöly: –');
+  String get diaryAreasTitle => _('What bothers you?', 'Mikä vaivaa?');
+  String get copyYesterday => _('Copy last entry', 'Kopioi edellinen');
+  String get diaryAreasSettings => _('Diary body areas', 'Päiväkirjan alueet');
+  String get diaryAreasSettingsSub => _(
+      'Hide areas you never react in, to keep logging quick.',
+      'Piilota alueet, joilla et koskaan oireile, niin kirjaaminen on nopeaa.');
+
+  /// Localised label for a body area id (see kBodyAreas).
+  String area(String id) {
+    switch (id) {
+      case 'general':
+        return _('General', 'Yleisvointi');
+      case 'eyes':
+        return _('Eyes', 'Silmät');
+      case 'nose':
+        return _('Nose', 'Nenä');
+      case 'ears':
+        return _('Ears', 'Korvat');
+      case 'mouth':
+        return _('Mouth', 'Suu');
+      case 'throat':
+        return _('Throat', 'Kurkku');
+      case 'skin':
+        return _('Skin', 'Iho');
+      case 'lungs':
+        return _('Lungs', 'Keuhkot');
+      case 'bronchi':
+        return _('Bronchi', 'Keuhkoputket');
+      default:
+        return id;
+    }
+  }
 
   String severity(int s) {
     switch (s) {
@@ -190,6 +224,22 @@ class L10n {
       default:
         return _('Severe', 'Voimakkaita');
     }
+  }
+
+  // --- weather ---
+  String get weatherWord => _('Weather', 'Sää');
+  String get pollenWord => _('Pollen', 'Siitepöly');
+  String weatherLabel(int code) {
+    if (code == 0) return _('Clear', 'Selkeää');
+    if (code <= 2) return _('Partly cloudy', 'Puolipilvistä');
+    if (code == 3) return _('Cloudy', 'Pilvistä');
+    if (code <= 48) return _('Fog', 'Sumua');
+    if (code <= 57) return _('Drizzle', 'Tihkua');
+    if (code <= 67) return _('Rain', 'Sadetta');
+    if (code <= 77) return _('Snow', 'Lunta');
+    if (code <= 82) return _('Showers', 'Sadekuuroja');
+    if (code <= 86) return _('Snow showers', 'Lumikuuroja');
+    return _('Thunderstorm', 'Ukkosta');
   }
 
   // --- relative time ---

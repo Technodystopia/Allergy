@@ -21,6 +21,7 @@ class AppState extends ChangeNotifier {
   final NotificationService notifications;
   final WidgetService widgetService;
   final BackgroundService background;
+  final WeatherService weatherService;
 
   AppState({
     required this.catalog,
@@ -30,8 +31,10 @@ class AppState extends ChangeNotifier {
     required this.notifications,
     WidgetService? widgetService,
     BackgroundService? background,
+    WeatherService? weatherService,
   })  : widgetService = widgetService ?? WidgetService(),
-        background = background ?? BackgroundService() {
+        background = background ?? BackgroundService(),
+        weatherService = weatherService ?? WeatherService() {
     _load();
   }
 
@@ -49,6 +52,7 @@ class AppState extends ChangeNotifier {
   static const _kAlertMinute = 'alert_minute';
   static const _kLang = 'language';
   static const _kDiary = 'symptom_diary';
+  static const _kDiaryAreas = 'diary_areas';
 
   Set<String> _selected = {};
   String _homeId = 'helsinki';
@@ -61,6 +65,7 @@ class AppState extends ChangeNotifier {
   int alertMinute = 0;
   AppLang _lang = AppLang.en;
   List<SymptomEntry> _diary = [];
+  List<String>? _enabledAreas; // null = all areas shown
   AppLocation? _gpsLocation;
 
   /// True while a GPS fix is being acquired.
@@ -68,6 +73,8 @@ class AppState extends ChangeNotifier {
 
   // forecast state for the current location
   Map<String, List<DailyPollen>> _forecast = {};
+  Weather? _weather;
+  Weather? get weather => _weather;
   bool loading = false;
   Object? error;
   DateTime? lastUpdated;
@@ -105,13 +112,43 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
+  /// Most recent entry on a day other than today — for "copy yesterday".
+  SymptomEntry? get lastLoggedEntry {
+    final key = _dayKey(DateTime.now());
+    for (final e in diary) {
+      if (e.dayKey != key) return e;
+    }
+    return null;
+  }
+
+  /// Body areas to show in the diary (personalised); defaults to all.
+  List<String> get enabledAreas =>
+      _enabledAreas ?? List<String>.from(kBodyAreas);
+
+  Future<void> setDiaryArea(String id, bool on) async {
+    final cur = enabledAreas.toSet();
+    if (on) {
+      cur.add(id);
+    } else {
+      cur.remove(id);
+    }
+    _enabledAreas = kBodyAreas.where(cur.contains).toList();
+    await prefs.setStringList(_kDiaryAreas, _enabledAreas!);
+    notifyListeners();
+  }
+
   /// Logs (or replaces) today's symptom entry, snapshotting today's worst level.
-  Future<void> logToday(int severity, String note) async {
+  Future<void> logToday(int severity, String note,
+      {Set<String> areas = const {}}) async {
     final key = _dayKey(DateTime.now());
     final rank = worstToday()?.level.rank ?? -1;
     _diary.removeWhere((e) => e.dayKey == key);
     _diary.add(SymptomEntry(
-        dayKey: key, severity: severity, pollenRank: rank, note: note));
+        dayKey: key,
+        severity: severity,
+        pollenRank: rank,
+        note: note,
+        areas: areas));
     await _saveDiary();
     notifyListeners();
   }
@@ -166,6 +203,8 @@ class AppState extends ChangeNotifier {
     alertHour = prefs.getInt(_kAlertHour) ?? 7;
     alertMinute = prefs.getInt(_kAlertMinute) ?? 0;
     _lang = (prefs.getString(_kLang) == 'fi') ? AppLang.fi : AppLang.en;
+
+    _enabledAreas = prefs.getStringList(_kDiaryAreas);
 
     final diaryStr = prefs.getString(_kDiary);
     if (diaryStr != null) {
@@ -333,6 +372,36 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  String _weatherCacheKey() =>
+      'weather_${currentLocation.id}_${currentLocation.lat.toStringAsFixed(2)}';
+
+  void _saveWeatherCache() {
+    if (_weather == null) return;
+    prefs.setString(_weatherCacheKey(), json.encode(_weather!.toJson()));
+  }
+
+  bool _loadWeatherCache() {
+    final str = prefs.getString(_weatherCacheKey());
+    if (str == null) return false;
+    try {
+      _weather = Weather.fromJson(json.decode(str) as Map<String, dynamic>);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Fetches current weather for the location (best-effort; never fatal).
+  Future<void> _refreshWeather() async {
+    final loc = currentLocation;
+    try {
+      _weather = await weatherService.fetch(lat: loc.lat, lon: loc.lon);
+      _saveWeatherCache();
+    } catch (_) {
+      _loadWeatherCache();
+    }
+  }
+
   /// Loads the live forecast for the current location + selected allergens.
   Future<void> refresh() async {
     if (selectedAllergens.isEmpty) {
@@ -344,6 +413,7 @@ class AppState extends ChangeNotifier {
     error = null;
     usingCache = false;
     _loadCache(); // optimistic: show cached data instantly while fetching
+    _loadWeatherCache();
     notifyListeners();
     try {
       final loc = currentLocation;
@@ -363,6 +433,9 @@ class AppState extends ChangeNotifier {
       loading = false;
       notifyListeners();
     }
+
+    await _refreshWeather();
+    notifyListeners();
 
     final worst = worstToday();
 

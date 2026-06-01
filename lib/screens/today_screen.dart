@@ -19,8 +19,15 @@ String _ago(DateTime? t, L10n s) {
   return s.dAgo(d.inDays);
 }
 
-class TodayScreen extends StatelessWidget {
+class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
+
+  @override
+  State<TodayScreen> createState() => _TodayScreenState();
+}
+
+class _TodayScreenState extends State<TodayScreen> {
+  bool _grid = false; // false = cards, true = multi-day dot grid
 
   @override
   Widget build(BuildContext context) {
@@ -58,12 +65,12 @@ class TodayScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(8),
         children: [
-          if (state.loading)
-            const LinearProgressIndicator(),
+          if (state.loading) const LinearProgressIndicator(),
           _SummaryBanner(
               level: worst,
               location: state.currentLocation.nameFi,
-              driver: worstAllergen),
+              driver: worstAllergen,
+              weather: state.weather),
           if (state.error != null)
             Card(
               color: state.usingCache
@@ -82,7 +89,28 @@ class TodayScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ...allergens.map((a) => _AllergenCard(allergen: a)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+            child: SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(
+                    value: false,
+                    label: Text(s.todayCards),
+                    icon: const Icon(Icons.view_agenda_outlined, size: 16)),
+                ButtonSegment(
+                    value: true,
+                    label: Text(s.todayGrid),
+                    icon: const Icon(Icons.grid_view, size: 16)),
+              ],
+              selected: {_grid},
+              showSelectedIcon: false,
+              onSelectionChanged: (v) => setState(() => _grid = v.first),
+            ),
+          ),
+          if (_grid)
+            _DayGrid(allergens: allergens, today: today)
+          else
+            ...allergens.map((a) => _AllergenCard(allergen: a)),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
@@ -99,12 +127,97 @@ class TodayScreen extends StatelessWidget {
   }
 }
 
+/// Compact allergen × day matrix of colour-coded rank dots — glance the whole
+/// week at once.
+class _DayGrid extends StatelessWidget {
+  final List<Allergen> allergens;
+  final DateTime today;
+  const _DayGrid({required this.allergens, required this.today});
+
+  static const _labelW = 88.0;
+  static const _days = 7;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final s = state.s;
+    final df = DateFormat('EEE', s.isFi ? 'fi' : 'en');
+    final dates = [for (var i = 0; i < _days; i++) today.add(Duration(days: i))];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 10, 8, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Day header.
+            Row(
+              children: [
+                const SizedBox(width: _labelW),
+                ...dates.map((d) {
+                  final isToday = d.day == today.day && d.month == today.month;
+                  return Expanded(
+                    child: Center(
+                      child: Text(
+                        isToday ? s.todayLabel.substring(0, 2) : df.format(d),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight:
+                              isToday ? FontWeight.bold : FontWeight.normal,
+                          color: isToday
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ...allergens.map((a) {
+              final series = Seasonal.sevenDaySeries(
+                  allergen: a, live: state.forecastFor(a.id), today: today);
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: _labelW,
+                      child: Text(
+                        '${a.emoji} ${s.allergenName(a).split(' · ').first}',
+                        style: const TextStyle(fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    ...List.generate(_days, (i) {
+                      final d = series[i];
+                      final lvl = a.thresholds.levelFor(d.peak);
+                      return Expanded(
+                        child: Center(
+                          child: LevelDot(lvl, size: 24, estimated: d.estimated),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SummaryBanner extends StatelessWidget {
   final PollenLevel level;
   final String location;
   final Allergen? driver;
+  final Weather? weather;
   const _SummaryBanner(
-      {required this.level, required this.location, this.driver});
+      {required this.level, required this.location, this.driver, this.weather});
 
   @override
   Widget build(BuildContext context) {
@@ -119,15 +232,8 @@ class _SummaryBanner extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Container(
-              width: 10,
-              height: 44,
-              decoration: BoxDecoration(
-                color: level.color,
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-            const SizedBox(width: 12),
+            LevelDot(level, size: 46),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,6 +251,10 @@ class _SummaryBanner extends StatelessWidget {
                 ],
               ),
             ),
+            if (weather != null) ...[
+              const SizedBox(width: 12),
+              WeatherGlance(weather!),
+            ],
           ],
         ),
       ),
