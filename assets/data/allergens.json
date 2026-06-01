@@ -74,7 +74,7 @@
       "family": "Poaceae",
       "emoji": "🌾",
       "relevanceFi": "very_high",
-      "description": "The main summer allergen. Long season through June–August with counts staying elevated for weeks. Timothy (Phleum pratense / timotei) is the dominant culprit in Finland. Far lower grains/m³ cause symptoms than birch — note the different scale.",
+      "description": "The main summer allergen. Long season through June–August with counts staying elevated for weeks. Timothy (Phleum pratense / timotei) is the dominant culprit in Finland. Symptoms start at far lower grains/m³ than with birch — note the different scale.",
       "descriptionFi": "Kesän pääallergeeni. Pitkä kausi kesä–elokuussa, ja määrät pysyvät koholla viikkoja. Timotei (Phleum pratense) on Suomen yleisin aiheuttaja. Paljon pienemmät pitoisuudet aiheuttavat oireita kuin koivulla — huomaa eri asteikko.",
       "season": { "startMonth": 6, "endMonth": 8, "peakStartMonth": 6, "peakEndMonth": 7, "note": "Onset southern/central Finland in June; peak late June–July.", "noteFi": "Alkaa Etelä- ja Keski-Suomessa kesäkuussa; huippu kesäkuun lopulta heinäkuuhun." },
       "thresholds": { "low": 1, "moderate": 5, "high": 30, "veryHigh": 150 },

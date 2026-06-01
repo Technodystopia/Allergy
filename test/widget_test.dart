@@ -35,6 +35,16 @@ void main() {
     expect(Seasonal.stageFor(birch, DateTime(2026, 7, 1)), BloomStage.ended);
   });
 
+  test('calendar tierForMonth classifies peak / shoulder / possible / none', () {
+    // birch: season Apr–May, peak May.
+    expect(birch.season.tierForMonth(5), 3); // peak
+    expect(birch.season.tierForMonth(4), 2); // in season, off peak
+    expect(birch.season.tierForMonth(3), 1); // fringe before season
+    expect(birch.season.tierForMonth(6), 1); // fringe after season
+    expect(birch.season.tierForMonth(1), 0); // none
+    expect(birch.season.tierForMonth(9), 0); // none
+  });
+
   test('seven day series fills estimated days', () {
     final series = Seasonal.sevenDaySeries(
       allergen: birch,

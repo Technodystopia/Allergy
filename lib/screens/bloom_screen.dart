@@ -2,37 +2,235 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
+import '../l10n.dart';
 import '../models.dart';
 import '../services.dart';
 import '../widgets.dart';
 
-class BloomScreen extends StatelessWidget {
+/// Calendar tier colours (match the timeline / reference pollen calendars):
+/// peak = red, early/late = orange, possible = yellow.
+const _tierColors = [
+  null, // 0 = none (theme faint grey)
+  Color(0xFFFDD835), // 1 possible
+  Color(0xFFFB8C00), // 2 early/late
+  Color(0xFFE53935), // 3 main flowering
+];
+
+class BloomScreen extends StatefulWidget {
   const BloomScreen({super.key});
+
+  @override
+  State<BloomScreen> createState() => _BloomScreenState();
+}
+
+class _BloomScreenState extends State<BloomScreen> {
+  bool _calendar = false; // false = timeline, true = compact calendar
+  bool _showAll = false; // false = my allergens, true = all
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final s = state.s;
-    final allergens = state.selectedAllergens;
     final now = DateTime.now();
-
-    if (allergens.isEmpty) {
-      return Center(child: Text(s.noAllergens, textAlign: TextAlign.center));
-    }
+    final list =
+        _showAll ? state.catalog.allergens : state.selectedAllergens;
 
     return ListView(
       padding: const EdgeInsets.all(8),
       children: [
+        // View + scope toggles.
         Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(s.bloomHeader),
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment(
+                        value: false,
+                        label: Text(s.bloomTimeline),
+                        icon: const Icon(Icons.timeline, size: 16)),
+                    ButtonSegment(
+                        value: true,
+                        label: Text(s.bloomCalendar),
+                        icon: const Icon(Icons.calendar_view_month, size: 16)),
+                  ],
+                  selected: {_calendar},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (v) =>
+                      setState(() => _calendar = v.first),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ChoiceChip(
+                label: Text(s.bloomMine),
+                selected: !_showAll,
+                onSelected: (_) => setState(() => _showAll = false),
+              ),
+              const SizedBox(width: 4),
+              ChoiceChip(
+                label: Text(s.bloomAll),
+                selected: _showAll,
+                onSelected: (_) => setState(() => _showAll = true),
+              ),
+            ],
+          ),
         ),
-        ...allergens.map((a) => _BloomCard(allergen: a, now: now)),
+        if (list.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(32),
+            child: Text(s.noAllergens, textAlign: TextAlign.center),
+          )
+        else if (_calendar) ...[
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(s.calendarHeader,
+                style: Theme.of(context).textTheme.bodySmall),
+          ),
+          _CalendarGrid(allergens: list, now: now),
+        ] else ...[
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(s.bloomHeader),
+          ),
+          ...list.map((a) => _BloomCard(allergen: a, now: now)),
+        ],
         const SizedBox(height: 24),
       ],
     );
   }
 }
+
+// --- Compact calendar grid -------------------------------------------------
+
+class _CalendarGrid extends StatelessWidget {
+  final List<Allergen> allergens;
+  final DateTime now;
+  const _CalendarGrid({required this.allergens, required this.now});
+
+  static const _labelW = 88.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.read<AppState>().s;
+    final faint = Colors.grey.withValues(alpha: 0.15);
+    final thisMonth = now.month;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 10, 8, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Month header row.
+            Row(
+              children: [
+                const SizedBox(width: _labelW),
+                ...List.generate(12, (i) {
+                  final m = i + 1;
+                  final current = m == thisMonth;
+                  return Expanded(
+                    child: Center(
+                      child: Text(
+                        s.monthAbbr(m),
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight:
+                              current ? FontWeight.bold : FontWeight.normal,
+                          color: current
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+            const SizedBox(height: 4),
+            ...allergens.map((a) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: _labelW,
+                        child: Text(
+                          '${a.emoji} ${s.allergenName(a).split(' · ').first}',
+                          style: const TextStyle(fontSize: 11),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      ...List.generate(12, (i) {
+                        final m = i + 1;
+                        final tier = a.season.tierForMonth(m);
+                        final color = _tierColors[tier] ?? faint;
+                        final current = m == thisMonth;
+                        return Expanded(
+                          child: Container(
+                            height: 20,
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(3),
+                              border: current
+                                  ? Border.all(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                      width: 1.4)
+                                  : null,
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                )),
+            const SizedBox(height: 12),
+            _CalendarLegend(s: s),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CalendarLegend extends StatelessWidget {
+  final L10n s;
+  const _CalendarLegend({required this.s});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget swatch(Color c, String label) => Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                    color: c, borderRadius: BorderRadius.circular(3)),
+              ),
+              const SizedBox(width: 4),
+              Text(label, style: Theme.of(context).textTheme.labelSmall),
+            ],
+          ),
+        );
+
+    return Wrap(
+      runSpacing: 4,
+      children: [
+        swatch(_tierColors[3]!, s.calMain),
+        swatch(_tierColors[2]!, s.calEarlyLate),
+        swatch(_tierColors[1]!, s.calPossible),
+      ],
+    );
+  }
+}
+
+// --- Detailed timeline card (unchanged) ------------------------------------
 
 class _BloomCard extends StatelessWidget {
   final Allergen allergen;

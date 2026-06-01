@@ -87,6 +87,19 @@ class Season {
       );
 
   String localizedNote(bool fi) => (fi ? noteFi : null) ?? note;
+
+  /// Calendar intensity tier for a given month (1–12), for the compact grid:
+  /// 3 = main flowering (peak), 2 = early/late flowering (in season, off peak),
+  /// 1 = possible occurrence (one month either side of the core season),
+  /// 0 = none. The "possible" fringe is a convention, not extra data.
+  int tierForMonth(int month) {
+    if (month >= peakStartMonth && month <= peakEndMonth) return 3;
+    if (month >= startMonth && month <= endMonth) return 2;
+    final pStart = startMonth > 1 ? startMonth - 1 : 1;
+    final pEnd = endMonth < 12 ? endMonth + 1 : 12;
+    if (month >= pStart && month <= pEnd) return 1;
+    return 0;
+  }
 }
 
 class CrossReactions {

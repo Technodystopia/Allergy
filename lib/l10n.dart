@@ -76,6 +76,26 @@ class L10n {
   String get bloomNow => _('Right now', 'Juuri nyt');
   String get bloomLive => _('live', 'live');
   String get bloomModelEst => _('seasonal estimate', 'kausiarvio');
+  String get bloomTimeline => _('Timeline', 'Aikajana');
+  String get bloomCalendar => _('Calendar', 'Kalenteri');
+  String get bloomMine => _('Mine', 'Omat');
+  String get bloomAll => _('All', 'Kaikki');
+  String get calendarHeader => _(
+      'Flowering calendar (southern Finland). Each row is an allergen; the colour shows how active it typically is that month.',
+      'Kukintakalenteri (Etelä-Suomi). Jokainen rivi on allergeeni; väri kertoo kuinka aktiivinen se tyypillisesti on kyseisenä kuukautena.');
+  String get calMain => _('Main flowering', 'Pääkukinta');
+  String get calEarlyLate => _('Early & late', 'Alku & loppu');
+  String get calPossible => _('Possible', 'Mahdollinen');
+
+  /// Compact 3-letter month label (1–12) for the calendar grid.
+  String monthAbbr(int month) {
+    const en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
+        'Sep', 'Oct', 'Nov', 'Dec'];
+    const fi = ['tam', 'hel', 'maa', 'huh', 'tou', 'kes', 'hei', 'elo',
+        'syy', 'lok', 'mar', 'jou'];
+    final i = (month - 1).clamp(0, 11);
+    return lang == AppLang.fi ? fi[i] : en[i];
+  }
 
   // --- map ---
   String get mapHeader => _(
