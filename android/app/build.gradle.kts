@@ -28,9 +28,14 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing with the debug keys for now, so the APK sideloads on any
+            // device for testing.
             signingConfig = signingConfigs.getByName("debug")
+            // Disable R8 code/resource shrinking: several plugins (WorkManager's
+            // Room database, flutter_local_notifications) instantiate classes by
+            // reflection, which minification strips and crashes at startup.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
