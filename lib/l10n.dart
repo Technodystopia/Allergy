@@ -125,6 +125,15 @@ class L10n {
       'Educational reference, not medical advice. Pollen seasons vary year to year.',
       'Opastava tietolähde, ei lääketieteellinen neuvo. Siitepölykaudet vaihtelevat vuosittain.');
   String get language => _('Language', 'Kieli');
+  String get homeWidget => _('Home screen', 'Aloitusnäyttö');
+  String get addWidget =>
+      _('Add pollen widget', 'Lisää siitepölywidget');
+  String get addWidgetSub => _(
+      'Place a glanceable today’s-level widget on your home screen.',
+      'Lisää aloitusnäytölle widget, joka näyttää tämän päivän tason.');
+  String get addWidgetUnsupported => _(
+      'Your launcher does not support adding widgets this way. Long-press the home screen instead.',
+      'Käynnistäjäsi ei tue widgetin lisäämistä näin. Paina aloitusnäyttöä pitkään.');
   String get english => _('English', 'Englanti');
   String get finnish => _('Finnish', 'Suomi');
 

@@ -76,6 +76,22 @@ class SettingsScreen extends StatelessWidget {
                 : null,
           ),
           const Divider(),
+          _Header(s.homeWidget),
+          ListTile(
+            leading: const Icon(Icons.widgets_outlined),
+            title: Text(s.addWidget),
+            subtitle: Text(s.addWidgetSub),
+            onTap: () async {
+              final ok = await state.widgetService.pinWidget();
+              if (!context.mounted) return;
+              if (!ok) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(s.addWidgetUnsupported)),
+                );
+              }
+            },
+          ),
+          const Divider(),
           _Header(s.about),
           ListTile(
             leading: const Icon(Icons.info_outline),

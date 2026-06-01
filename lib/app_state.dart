@@ -8,6 +8,7 @@ import 'location_service.dart';
 import 'models.dart';
 import 'notification_service.dart';
 import 'services.dart';
+import 'widget_service.dart';
 
 /// Central app state: user's selected allergens, home base + favourite
 /// locations, and the currently loaded forecast. Persisted via prefs.
@@ -17,6 +18,7 @@ class AppState extends ChangeNotifier {
   final SharedPreferences prefs;
   final LocationService locationService;
   final NotificationService notifications;
+  final WidgetService widgetService;
 
   AppState({
     required this.catalog,
@@ -24,7 +26,8 @@ class AppState extends ChangeNotifier {
     required this.prefs,
     required this.locationService,
     required this.notifications,
-  }) {
+    WidgetService? widgetService,
+  }) : widgetService = widgetService ?? WidgetService() {
     _load();
   }
 
@@ -355,9 +358,17 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
 
+    final worst = worstToday();
+
+    // Keep the home-screen widget in sync with the latest snapshot.
+    await widgetService.update(
+      location: currentLocation.nameFi,
+      worst: worst,
+      s: s,
+    );
+
     // Heads-up if any selected allergen is High+ today (only when alerts on).
     if (dailyAlert) {
-      final worst = worstToday();
       if (worst != null && worst.level.rank >= PollenLevel.high.rank) {
         await notifications.showHeadsUp(
           s.summaryHeadline(s.level(worst.level), s.allergenName(worst.allergen)),
