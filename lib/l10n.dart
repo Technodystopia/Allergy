@@ -124,6 +124,23 @@ class L10n {
   String get removeAllergen =>
       _('Remove from my allergens', 'Poista allergeeneista');
 
+  // --- food intolerance catalogue ---
+  String get foodCatalogTitle => _('My food list', 'Oma ruokalista');
+  String foodCatalogOpen(int n) => n > 0
+      ? _('My food list ($n)', 'Oma ruokalista ($n)')
+      : _('My food list', 'Oma ruokalista');
+  String get foodCatalogHeader => _(
+      'Flag a food you react to. Add a note for the exceptions that are still fine — e.g. “winter apples ok, brand XYZ ok”. A flagged food means avoid by default.',
+      'Merkitse ruoka, jolle reagoit. Lisää muistiinpano poikkeuksista, jotka ovat silti ok — esim. ”talviomenat ok, merkki XYZ ok”. Merkitty ruoka tarkoittaa: vältä oletuksena.');
+  String get foodAvoid => _('Avoid', 'Vältä');
+  String get foodNoteHint =>
+      _('Exceptions that are still fine', 'Poikkeukset, jotka ovat silti ok');
+  String foodCrossWith(String pollens) =>
+      _('Cross-reacts with $pollens', 'Ristireagoi: $pollens');
+  String get foodEmpty => _(
+      'No cross-reaction foods in the catalogue yet.',
+      'Ei ristireagoivia ruokia luettelossa vielä.');
+
   // --- locations ---
   String get locations => _('Locations', 'Sijainnit');
   String get locHeader => _(
@@ -175,6 +192,7 @@ class L10n {
   String get logTitle => _('How do you feel today?', 'Miltä tänään tuntuu?');
   String get noteHint => _('Note (optional)', 'Muistiinpano (valinnainen)');
   String get save => _('Save', 'Tallenna');
+  String get cancel => _('Cancel', 'Peruuta');
   String get logToday => _('Log today', 'Kirjaa tänään');
   String get delete => _('Delete', 'Poista');
   String pollenThatDay(String level) =>

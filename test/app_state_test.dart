@@ -181,6 +181,25 @@ void main() {
     expect(reloaded.diary, isEmpty);
   });
 
+  test('food intolerance flag + note persist across instances', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final state = _state([FakeSource('openmeteo')], prefs);
+
+    await state.toggleFood('apple');
+    await state.setFoodNote('apple', 'winter apples fine');
+    expect(state.isFoodFlagged('apple'), true);
+    expect(state.foodNote('apple'), 'winter apples fine');
+
+    final reloaded = _state([FakeSource('openmeteo')], prefs);
+    expect(reloaded.isFoodFlagged('apple'), true);
+    expect(reloaded.foodNote('apple'), 'winter apples fine');
+
+    await reloaded.toggleFood('apple'); // unflag removes it
+    expect(reloaded.isFoodFlagged('apple'), false);
+    expect(reloaded.flaggedFoods, isEmpty);
+  });
+
   test('allergen selection persists', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();

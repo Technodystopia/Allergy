@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
 import '../widgets.dart';
+import 'food_screen.dart';
 
 class ReferenceScreen extends StatelessWidget {
   const ReferenceScreen({super.key});
@@ -18,6 +19,16 @@ class ReferenceScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(12),
           child: Text(s.refHeader),
+        ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.restaurant_menu),
+            title: Text(s.foodCatalogOpen(state.flaggedFoods.length)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FoodCatalogScreen()),
+            ),
+          ),
         ),
         ...state.catalog.allergens.map((a) {
           final selected = state.selectedIds.contains(a.id);
@@ -84,17 +95,23 @@ class AllergenDetailScreen extends StatelessWidget {
           _section(context, s.crossFoods),
           if (a.crossReactions.foods.isEmpty)
             Text(s.noneNoted)
-          else
+          else ...[
             Wrap(
               spacing: 6,
               runSpacing: 2,
               children: a.crossReactions.foods
-                  .map((f) => Chip(
+                  .map((f) => FilterChip(
                         label: Text(s.food(f)),
+                        selected: state.isFoodFlagged(f),
                         visualDensity: VisualDensity.compact,
+                        onSelected: (_) => state.toggleFood(f),
                       ))
                   .toList(),
             ),
+            const SizedBox(height: 6),
+            Text(s.foodCatalogHeader,
+                style: Theme.of(context).textTheme.bodySmall),
+          ],
           const SizedBox(height: 16),
           _section(context, s.severityScale),
           _thresholdRow(s.level(PollenLevel.low), '${t.low.round()}+', PollenLevel.low),

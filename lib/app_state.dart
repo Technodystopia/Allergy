@@ -53,6 +53,7 @@ class AppState extends ChangeNotifier {
   static const _kLang = 'language';
   static const _kDiary = 'symptom_diary';
   static const _kDiaryAreas = 'diary_areas';
+  static const _kFoods = 'food_intolerances';
 
   Set<String> _selected = {};
   String _homeId = 'helsinki';
@@ -66,6 +67,7 @@ class AppState extends ChangeNotifier {
   AppLang _lang = AppLang.en;
   List<SymptomEntry> _diary = [];
   List<String>? _enabledAreas; // null = all areas shown
+  Map<String, String> _foodNotes = {}; // flagged OAS food → personal note
   AppLocation? _gpsLocation;
 
   /// True while a GPS fix is being acquired.
@@ -164,6 +166,33 @@ class AppState extends ChangeNotifier {
         _kDiary, json.encode(_diary.map((e) => e.toJson()).toList()));
   }
 
+  // --- personal food-intolerance catalogue (built from OAS cross-reactions) ---
+
+  /// Foods the user has flagged as "I react to this" (avoid by default).
+  Set<String> get flaggedFoods => _foodNotes.keys.toSet();
+  bool isFoodFlagged(String food) => _foodNotes.containsKey(food);
+  String foodNote(String food) => _foodNotes[food] ?? '';
+
+  Future<void> toggleFood(String food) async {
+    if (_foodNotes.containsKey(food)) {
+      _foodNotes.remove(food);
+    } else {
+      _foodNotes[food] = '';
+    }
+    await _saveFoods();
+    notifyListeners();
+  }
+
+  /// Sets (and implicitly flags) a personal note for a food.
+  Future<void> setFoodNote(String food, String note) async {
+    _foodNotes[food] = note;
+    await _saveFoods();
+    notifyListeners();
+  }
+
+  Future<void> _saveFoods() async =>
+      prefs.setString(_kFoods, json.encode(_foodNotes));
+
   PollenSource get currentSource =>
       sources.firstWhere((s) => s.id == _sourceId, orElse: () => sources.first);
   String get sourceId => _sourceId;
@@ -205,6 +234,16 @@ class AppState extends ChangeNotifier {
     _lang = (prefs.getString(_kLang) == 'fi') ? AppLang.fi : AppLang.en;
 
     _enabledAreas = prefs.getStringList(_kDiaryAreas);
+
+    final foodsStr = prefs.getString(_kFoods);
+    if (foodsStr != null) {
+      try {
+        _foodNotes = (json.decode(foodsStr) as Map)
+            .map((k, v) => MapEntry(k as String, v as String));
+      } catch (_) {
+        _foodNotes = {};
+      }
+    }
 
     final diaryStr = prefs.getString(_kDiary);
     if (diaryStr != null) {
