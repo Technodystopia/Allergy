@@ -96,7 +96,16 @@ class _BloomCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _SeasonBar(season: allergen.season, now: now, color: allergen.thresholds.levelFor(allergen.thresholds.high).color),
+            Semantics(
+              label: '${s.allergenName(allergen)}: ${s.stageLabel(stage)} — '
+                  '${s.stageDesc(stage)}',
+              child: _SeasonBar(
+                  season: allergen.season,
+                  now: now,
+                  color: allergen.thresholds
+                      .levelFor(allergen.thresholds.high)
+                      .color),
+            ),
             const SizedBox(height: 6),
             const _MonthLabels(),
             const SizedBox(height: 12),

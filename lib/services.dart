@@ -42,18 +42,22 @@ abstract class PollenSource {
   });
 }
 
-/// Builds a map of allergenId → sorted daily peaks from per-day max values.
-Map<String, List<DailyPollen>> _daysFromMaxByDay(
-    Map<String, Map<String, double>> byAllergenDay) {
+/// Builds allergenId → sorted daily forecasts from per-day hourly samples.
+/// Each day's peak is the max hourly value; the hourly samples are retained.
+Map<String, List<DailyPollen>> _buildDays(
+    Map<String, Map<String, List<HourSample>>> byAllergenDay) {
   final result = <String, List<DailyPollen>>{};
   byAllergenDay.forEach((allergenId, byDay) {
-    final days = byDay.entries
-        .map((e) => DailyPollen(
-              date: DateTime.parse(e.key),
-              peak: e.value,
-              estimated: false,
-            ))
-        .toList()
+    final days = byDay.entries.map((e) {
+      final hours = [...e.value]..sort((a, b) => a.hour.compareTo(b.hour));
+      final peak = hours.fold<double>(0, (m, h) => h.value > m ? h.value : m);
+      return DailyPollen(
+        date: DateTime.parse(e.key),
+        peak: peak,
+        estimated: false,
+        hours: hours,
+      );
+    }).toList()
       ..sort((x, y) => x.date.compareTo(y.date));
     result[allergenId] = days;
   });
@@ -104,21 +108,24 @@ class OpenMeteoSource implements PollenSource {
     if (hourly == null) return {};
     final times = (hourly['time'] as List).cast<String>();
 
-    final byAllergenDay = <String, Map<String, double>>{};
+    final byAllergenDay = <String, Map<String, List<HourSample>>>{};
     for (final a in live) {
       final series = hourly[a.openMeteoVar] as List?;
       if (series == null) continue;
-      final byDay = <String, double>{};
+      final byDay = <String, List<HourSample>>{};
       for (var i = 0; i < times.length && i < series.length; i++) {
         final v = series[i];
         if (v == null) continue;
-        final day = times[i].substring(0, 10);
-        final val = (v as num).toDouble();
-        byDay.update(day, (cur) => val > cur ? val : cur, ifAbsent: () => val);
+        final t = times[i];
+        final day = t.substring(0, 10);
+        final hour = int.tryParse(t.substring(11, 13)) ?? 0;
+        byDay
+            .putIfAbsent(day, () => [])
+            .add(HourSample(hour, (v as num).toDouble()));
       }
       byAllergenDay[a.id] = byDay;
     }
-    return _daysFromMaxByDay(byAllergenDay);
+    return _buildDays(byAllergenDay);
   }
 }
 
@@ -213,7 +220,7 @@ class SilamSource implements PollenSource {
       }
     }
 
-    final byAllergenDay = <String, Map<String, double>>{};
+    final byAllergenDay = <String, Map<String, List<HourSample>>>{};
     final today = (nowUtc ?? DateTime.now()).toUtc();
     final cutoff = DateTime.utc(today.year, today.month, today.day);
 
@@ -227,16 +234,18 @@ class SilamSource implements PollenSource {
       final ts = DateTime.tryParse(cells[timeIdx]);
       if (ts == null || ts.isBefore(cutoff)) continue; // today onward
       final day = cells[timeIdx].substring(0, 10);
+      final hour = ts.toLocal().hour;
       colForId.forEach((col, allergenId) {
         if (cells.length <= col) return;
         final val = double.tryParse(cells[col]);
         if (val == null) return;
         byAllergenDay
             .putIfAbsent(allergenId, () => {})
-            .update(day, (cur) => val > cur ? val : cur, ifAbsent: () => val);
+            .putIfAbsent(day, () => [])
+            .add(HourSample(hour, val));
       });
     }
-    return _daysFromMaxByDay(byAllergenDay);
+    return _buildDays(byAllergenDay);
   }
 }
 

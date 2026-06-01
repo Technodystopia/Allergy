@@ -202,14 +202,112 @@ class _AllergenCardState extends State<_AllergenCard> {
               ],
             ),
           ),
+          if (todayD.hours.isNotEmpty && todayD.lowestDaytimeHour != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${s.lowestAround(todayD.lowestDaytimeHour!)}'
+                      '${todayD.peakHour != null ? ' · ${s.peaksAround(todayD.peakHour!)}' : ''}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           TextButton.icon(
             onPressed: () => setState(() => _expanded = !_expanded),
             icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
             label: Text(_expanded ? s.showLess : s.show7),
           ),
-          if (_expanded) _SevenDay(series: series, allergen: a),
+          if (_expanded) ...[
+            if (todayD.hours.length >= 4) _HourlyBars(day: todayD, allergen: a),
+            _SevenDay(series: series, allergen: a),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// A compact 24-hour bar strip for one day, coloured by level, with the
+/// lowest daytime hour highlighted.
+class _HourlyBars extends StatelessWidget {
+  final DailyPollen day;
+  final Allergen allergen;
+  const _HourlyBars({required this.day, required this.allergen});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.watch<AppState>().s;
+    final maxV = day.hours.fold<double>(
+        allergen.thresholds.low, (m, h) => h.value > m ? h.value : m);
+    final lowHour = day.lowestDaytimeHour;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(s.todayByHour, style: Theme.of(context).textTheme.labelMedium),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 48,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: day.hours.map((h) {
+                final lvl = allergen.thresholds.levelFor(h.value);
+                final frac = maxV > 0 ? (h.value / maxV).clamp(0.06, 1.0) : 0.06;
+                final isLow = h.hour == lowHour;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0.5),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          height: 40 * frac,
+                          decoration: BoxDecoration(
+                            color: lvl.color,
+                            borderRadius: BorderRadius.circular(2),
+                            border: isLow
+                                ? Border.all(color: Colors.black87, width: 1.5)
+                                : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: _HourAxis(count: day.hours.length),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HourAxis extends StatelessWidget {
+  final int count;
+  const _HourAxis({this.count = 24});
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(count, (i) {
+        final label = (i == 0 || i == 6 || i == 12 || i == 18) ? '$i' : '';
+        return Expanded(
+          child: Text(label,
+              style: const TextStyle(fontSize: 9, color: Colors.grey)),
+        );
+      }),
     );
   }
 }

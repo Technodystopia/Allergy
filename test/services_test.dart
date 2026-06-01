@@ -36,6 +36,25 @@ void main() {
       expect(out['birch']![1].peak, 2.0);
       expect(out['grass']![0].peak, 3.0);
       expect(out['birch']!.every((d) => d.estimated == false), true);
+      // hourly samples retained, peak hour identified
+      expect(out['birch']![0].hours.length, 2);
+      expect(out['birch']![0].peakHour, 6); // value 5.0 at 06:00
+    });
+
+    test('lowestDaytimeHour ignores night and picks the minimum', () {
+      final d = DailyPollen(
+        date: DateTime.utc(2026, 6, 1),
+        peak: 8,
+        estimated: false,
+        hours: const [
+          HourSample(3, 1.0), // night, ignored
+          HourSample(9, 8.0),
+          HourSample(15, 4.0),
+          HourSample(20, 6.0),
+        ],
+      );
+      expect(d.lowestDaytimeHour, 15);
+      expect(d.peakHour, 9);
     });
 
     test('skips nulls and missing variables', () {

@@ -173,28 +173,61 @@ class AppLocation {
       );
 }
 
-/// A single day's peak pollen for one allergen.
+/// One hour's pollen value (local hour 0–23).
+class HourSample {
+  final int hour;
+  final double value;
+  const HourSample(this.hour, this.value);
+
+  Map<String, dynamic> toJson() => {'h': hour, 'v': value};
+  factory HourSample.fromJson(Map<String, dynamic> j) =>
+      HourSample(j['h'] as int, (j['v'] as num).toDouble());
+}
+
+/// A single day's peak pollen for one allergen, plus its hourly breakdown.
 class DailyPollen {
   final DateTime date;
   final double peak; // max hourly grains/m³ that day
   final bool estimated; // true → derived from the seasonal calendar, not the live model
+  final List<HourSample> hours; // hourly samples (empty for estimated days)
   const DailyPollen({
     required this.date,
     required this.peak,
     required this.estimated,
+    this.hours = const [],
   });
 
   Map<String, dynamic> toJson() => {
         'date': date.toIso8601String(),
         'peak': peak,
         'estimated': estimated,
+        if (hours.isNotEmpty) 'hours': hours.map((h) => h.toJson()).toList(),
       };
 
   factory DailyPollen.fromJson(Map<String, dynamic> j) => DailyPollen(
         date: DateTime.parse(j['date'] as String),
         peak: (j['peak'] as num).toDouble(),
         estimated: j['estimated'] as bool,
+        hours: (j['hours'] as List?)
+                ?.map((e) => HourSample.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            const [],
       );
+
+  /// Hour of the lowest pollen within daytime (06–22), or null if no data.
+  int? get lowestDaytimeHour {
+    final day = hours.where((h) => h.hour >= 6 && h.hour <= 22).toList();
+    if (day.isEmpty) return null;
+    day.sort((a, b) => a.value.compareTo(b.value));
+    return day.first.hour;
+  }
+
+  /// Hour of the day's peak pollen, or null if no hourly data.
+  int? get peakHour {
+    if (hours.isEmpty) return null;
+    final sorted = [...hours]..sort((a, b) => b.value.compareTo(a.value));
+    return sorted.first.hour;
+  }
 }
 
 /// Where an allergen is in its flowering cycle right now.

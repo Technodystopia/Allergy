@@ -40,6 +40,12 @@ class AllergyApp extends StatelessWidget {
           colorSchemeSeed: const Color(0xFF2E7D32),
           useMaterial3: true,
         ),
+        darkTheme: ThemeData(
+          colorSchemeSeed: const Color(0xFF2E7D32),
+          brightness: Brightness.dark,
+          useMaterial3: true,
+        ),
+        themeMode: ThemeMode.system,
         home: const _Root(),
       ),
     );

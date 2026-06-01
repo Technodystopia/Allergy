@@ -46,6 +46,10 @@ class L10n {
   String grains(int n) => _('$n grains/m³', '$n kpl/m³');
   String get estSuffix => _(' (est.)', ' (arvio)');
   String get show7 => _('Show 7 days', 'Näytä 7 päivää');
+  String get todayByHour => _('Today by hour', 'Tänään tunneittain');
+  String lowestAround(int h) =>
+      _('Lowest ~$h:00', 'Matalin n. klo $h');
+  String peaksAround(int h) => _('peaks ~$h:00', 'huippu n. klo $h');
   String get showLess => _('Show less', 'Näytä vähemmän');
   String get estimateNote => _(
       'Faded points (days 5–7) are seasonal estimates — the live model only forecasts ~4 days ahead.',
