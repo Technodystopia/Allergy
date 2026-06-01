@@ -1,0 +1,19 @@
+{
+  "_meta": {
+    "note": "Seed locations for the location picker. Helsinki is the default home base. Users can add others or use device GPS.",
+    "default": "helsinki"
+  },
+  "locations": [
+    { "id": "helsinki",    "nameFi": "Helsinki",    "region": "Uusimaa", "lat": 60.1699, "lon": 24.9384, "capitalRegion": true },
+    { "id": "espoo",       "nameFi": "Espoo",       "region": "Uusimaa", "lat": 60.2055, "lon": 24.6559, "capitalRegion": true },
+    { "id": "vantaa",      "nameFi": "Vantaa",      "region": "Uusimaa", "lat": 60.2934, "lon": 25.0378, "capitalRegion": true },
+    { "id": "kauniainen",  "nameFi": "Kauniainen",  "region": "Uusimaa", "lat": 60.2118, "lon": 24.7286, "capitalRegion": true },
+    { "id": "turku",       "nameFi": "Turku",       "region": "Varsinais-Suomi", "lat": 60.4518, "lon": 22.2666, "capitalRegion": false },
+    { "id": "tampere",     "nameFi": "Tampere",     "region": "Pirkanmaa", "lat": 61.4978, "lon": 23.7610, "capitalRegion": false },
+    { "id": "lahti",       "nameFi": "Lahti",       "region": "Päijät-Häme", "lat": 60.9827, "lon": 25.6612, "capitalRegion": false },
+    { "id": "jyvaskyla",   "nameFi": "Jyväskylä",   "region": "Keski-Suomi", "lat": 62.2426, "lon": 25.7473, "capitalRegion": false },
+    { "id": "kuopio",      "nameFi": "Kuopio",      "region": "Pohjois-Savo", "lat": 62.8924, "lon": 27.6770, "capitalRegion": false },
+    { "id": "oulu",        "nameFi": "Oulu",        "region": "Pohjois-Pohjanmaa", "lat": 65.0121, "lon": 25.4651, "capitalRegion": false },
+    { "id": "rovaniemi",   "nameFi": "Rovaniemi",   "region": "Lappi", "lat": 66.5039, "lon": 25.7294, "capitalRegion": false }
+  ]
+}

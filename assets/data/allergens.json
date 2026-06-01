@@ -1,0 +1,144 @@
+{
+  "_meta": {
+    "region": "Finland — Helsinki / Uusimaa capital region",
+    "thresholdSource": "Finnish aerobiology scale (Univ. of Turku Aerobiology Unit / Norkko), grains/m³",
+    "disclaimer": "Educational reference only. Not medical advice. Pollen seasons shift year to year with weather; the season months below are typical southern-Finland windows.",
+    "units": "grains/m3",
+    "levels": ["none", "low", "moderate", "high", "very_high"]
+  },
+  "allergens": [
+    {
+      "id": "alder",
+      "openMeteoVar": "alder_pollen",
+      "silamVar": "cnc_POLLEN_ALDER_m22",
+      "nameEn": "Alder",
+      "nameFi": "Leppä",
+      "scientificName": "Alnus",
+      "family": "Betulaceae",
+      "emoji": "🌳",
+      "relevanceFi": "high",
+      "description": "One of the earliest pollen producers in Finland. Long-range transported alder pollen can arrive from Central Europe weeks before local trees flower. Cross-reacts strongly with birch.",
+      "descriptionFi": "Yksi Suomen aikaisimmista siitepölyn tuottajista. Kaukokulkeumana leppä voi saapua Keski-Euroopasta viikkoja ennen paikallisten puiden kukintaa. Ristireagoi voimakkaasti koivun kanssa.",
+      "season": { "startMonth": 3, "endMonth": 4, "peakStartMonth": 3, "peakEndMonth": 4, "note": "Can begin in February in mild years; long-range transport often precedes local flowering.", "noteFi": "Voi alkaa helmikuussa leutoina vuosina; kaukokulkeuma edeltää usein paikallista kukintaa." },
+      "thresholds": { "low": 1, "moderate": 10, "high": 100, "veryHigh": 1500 },
+      "crossReactions": {
+        "pollen": ["birch", "hazel"],
+        "foods": ["apple", "hazelnut", "peach", "celery", "carrot"]
+      }
+    },
+    {
+      "id": "birch",
+      "openMeteoVar": "birch_pollen",
+      "silamVar": "cnc_POLLEN_BIRCH_m22",
+      "nameEn": "Birch",
+      "nameFi": "Koivu",
+      "scientificName": "Betula",
+      "family": "Betulaceae",
+      "emoji": "🌲",
+      "relevanceFi": "very_high",
+      "description": "The single most important allergen in Finland — birch is everywhere and its pollen counts reach extreme levels. Peak season is short but intense, typically early-to-mid May in the Helsinki region. Bet v 1 is the main allergen and drives oral allergy syndrome.",
+      "descriptionFi": "Suomen tärkein allergeeni — koivua on kaikkialla ja siitepölymäärät nousevat erittäin korkeiksi. Huippukausi on lyhyt mutta voimakas, tyypillisesti toukokuun alku- tai puolivälissä pääkaupunkiseudulla. Bet v 1 on pääallergeeni ja aiheuttaa suun allergiaoireyhtymää.",
+      "season": { "startMonth": 4, "endMonth": 5, "peakStartMonth": 5, "peakEndMonth": 5, "note": "Late April onset, sharp peak early–mid May; long-range transport can spike counts before local peak.", "noteFi": "Alkaa huhtikuun lopulla, terävä huippu toukokuun alku-/puolivälissä; kaukokulkeuma voi nostaa määriä ennen paikallista huippua." },
+      "thresholds": { "low": 1, "moderate": 10, "high": 100, "veryHigh": 1500 },
+      "crossReactions": {
+        "pollen": ["alder", "hazel"],
+        "foods": ["apple", "pear", "peach", "cherry", "plum", "hazelnut", "almond", "carrot", "celery", "kiwi", "soy"]
+      }
+    },
+    {
+      "id": "hazel",
+      "openMeteoVar": null,
+      "silamVar": "cnc_POLLEN_HAZEL_m23",
+      "nameEn": "Hazel",
+      "nameFi": "Pähkinäpensas",
+      "scientificName": "Corylus",
+      "family": "Betulaceae",
+      "emoji": "🌰",
+      "relevanceFi": "low",
+      "description": "Minor in Finland (not native far north), but flowers very early alongside alder and cross-reacts with birch. Mostly long-range transported. Not provided by the live forecast model — shown for season/reference only.",
+      "descriptionFi": "Vähäinen Suomessa (ei kasva kaukana pohjoisessa), mutta kukkii hyvin aikaisin lepän kanssa ja ristireagoi koivun kanssa. Pääosin kaukokulkeumaa. Saatavilla SILAM-lähteestä mutta ei Open-Meteosta.",
+      "season": { "startMonth": 3, "endMonth": 4, "peakStartMonth": 3, "peakEndMonth": 4, "note": "Earliest tree pollen; largely long-range transported into Finland.", "noteFi": "Aikaisin puiden siitepöly; pääosin kaukokulkeumaa Suomeen." },
+      "thresholds": { "low": 1, "moderate": 10, "high": 100, "veryHigh": 1500 },
+      "crossReactions": {
+        "pollen": ["birch", "alder"],
+        "foods": ["hazelnut", "apple", "peach", "carrot", "celery"]
+      }
+    },
+    {
+      "id": "grass",
+      "openMeteoVar": "grass_pollen",
+      "silamVar": "cnc_POLLEN_GRASS_m32",
+      "nameEn": "Grass",
+      "nameFi": "Heinä",
+      "scientificName": "Poaceae",
+      "family": "Poaceae",
+      "emoji": "🌾",
+      "relevanceFi": "very_high",
+      "description": "The main summer allergen. Long season through June–August with counts staying elevated for weeks. Timothy (Phleum pratense / timotei) is the dominant culprit in Finland. Far lower grains/m³ cause symptoms than birch — note the different scale.",
+      "descriptionFi": "Kesän pääallergeeni. Pitkä kausi kesä–elokuussa, ja määrät pysyvät koholla viikkoja. Timotei (Phleum pratense) on Suomen yleisin aiheuttaja. Paljon pienemmät pitoisuudet aiheuttavat oireita kuin koivulla — huomaa eri asteikko.",
+      "season": { "startMonth": 6, "endMonth": 8, "peakStartMonth": 6, "peakEndMonth": 7, "note": "Onset southern/central Finland in June; peak late June–July.", "noteFi": "Alkaa Etelä- ja Keski-Suomessa kesäkuussa; huippu kesäkuun lopulta heinäkuuhun." },
+      "thresholds": { "low": 1, "moderate": 5, "high": 30, "veryHigh": 150 },
+      "crossReactions": {
+        "pollen": ["mugwort"],
+        "foods": ["tomato", "melon", "watermelon", "orange", "peanut", "swiss_chard"]
+      }
+    },
+    {
+      "id": "mugwort",
+      "openMeteoVar": "mugwort_pollen",
+      "silamVar": "cnc_POLLEN_MUGWORT_m18",
+      "nameEn": "Mugwort",
+      "nameFi": "Pujo",
+      "scientificName": "Artemisia",
+      "family": "Asteraceae",
+      "emoji": "🌿",
+      "relevanceFi": "moderate",
+      "description": "Late-summer weed pollen. Art v 1 drives the 'celery–mugwort–spice' syndrome. Counts are low in absolute terms but highly allergenic, so the scale is tighter than for trees.",
+      "descriptionFi": "Loppukesän rikkakasvisiitepöly. Art v 1 aiheuttaa 'selleri–pujo–mauste' -oireyhtymää. Määrät ovat absoluuttisesti pieniä mutta hyvin allergisoivia, joten asteikko on tiukempi kuin puilla.",
+      "season": { "startMonth": 7, "endMonth": 9, "peakStartMonth": 8, "peakEndMonth": 8, "note": "Late July onset, peak August.", "noteFi": "Alkaa heinäkuun lopulla, huippu elokuussa." },
+      "thresholds": { "low": 1, "moderate": 5, "high": 11, "veryHigh": 30 },
+      "crossReactions": {
+        "pollen": ["ragweed", "grass"],
+        "foods": ["celery", "carrot", "parsley", "coriander", "cumin", "fennel", "sunflower_seed", "mango", "chamomile"]
+      }
+    },
+    {
+      "id": "ragweed",
+      "openMeteoVar": "ragweed_pollen",
+      "silamVar": "cnc_POLLEN_RAGWEED_m18",
+      "nameEn": "Ragweed",
+      "nameFi": "Tuoksukki (ambrosia)",
+      "scientificName": "Ambrosia",
+      "family": "Asteraceae",
+      "emoji": "🥀",
+      "relevanceFi": "low",
+      "description": "Not established in Finland but long-range transported from Central/Eastern Europe in late summer. Extremely allergenic — even very low counts cause symptoms. Drives 'ragweed–melon–banana' syndrome.",
+      "descriptionFi": "Ei vakiintunut Suomeen, mutta kaukokulkeumana Keski- ja Itä-Euroopasta loppukesällä. Erittäin allergisoiva — pienetkin määrät aiheuttavat oireita. Aiheuttaa 'tuoksukki–meloni–banaani' -oireyhtymää.",
+      "season": { "startMonth": 8, "endMonth": 9, "peakStartMonth": 8, "peakEndMonth": 9, "note": "Almost entirely long-range transported; episodic spikes on southerly winds.", "noteFi": "Lähes kokonaan kaukokulkeumaa; ajoittaisia piikkejä etelätuulilla." },
+      "thresholds": { "low": 1, "moderate": 5, "high": 11, "veryHigh": 30 },
+      "crossReactions": {
+        "pollen": ["mugwort"],
+        "foods": ["melon", "watermelon", "honeydew", "banana", "cucumber", "zucchini"]
+      }
+    },
+    {
+      "id": "olive",
+      "openMeteoVar": "olive_pollen",
+      "silamVar": "cnc_POLLEN_OLIVE_m20",
+      "nameEn": "Olive",
+      "nameFi": "Oliivi",
+      "scientificName": "Olea europaea",
+      "family": "Oleaceae",
+      "emoji": "🫒",
+      "relevanceFi": "none",
+      "description": "Not relevant in Finland (no olive trees, negligible long-range transport). Included because the forecast model provides it and it cross-reacts with ash/lilac (Oleaceae). Hidden by default.",
+      "descriptionFi": "Ei merkitystä Suomessa (ei oliivipuita, kaukokulkeuma vähäistä). Mukana koska malli tuottaa sen ja se ristireagoi saarnen/syreenin kanssa (Oleaceae). Piilotettu oletuksena.",
+      "season": { "startMonth": 5, "endMonth": 6, "peakStartMonth": 5, "peakEndMonth": 6, "note": "Mediterranean species — not a Finnish allergen.", "noteFi": "Välimeren laji — ei suomalainen allergeeni." },
+      "thresholds": { "low": 1, "moderate": 50, "high": 200, "veryHigh": 800 },
+      "crossReactions": {
+        "pollen": [],
+        "foods": []
+      }
+    }
+  ]
+}
