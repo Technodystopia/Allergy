@@ -151,6 +151,10 @@ class Weather {
       );
 }
 
+/// Personal stance on a cross-reaction food: untracked, try with caution
+/// (haven't confirmed yet), or known to avoid.
+enum FoodStatus { none, caution, avoid }
+
 class CrossReactions {
   final List<String> pollen;
   final List<String> foods;
@@ -168,6 +172,7 @@ class Allergen {
   final String? silamVar;
   final String nameEn, nameFi, scientificName, family, emoji, relevanceFi, description;
   final String? descriptionFi;
+  final String? kasviatlasKey; // Finnish name for the Kasviatlas distribution atlas
   final Season season;
   final Thresholds thresholds;
   final CrossReactions crossReactions;
@@ -184,10 +189,16 @@ class Allergen {
     required this.relevanceFi,
     required this.description,
     this.descriptionFi,
+    this.kasviatlasKey,
     required this.season,
     required this.thresholds,
     required this.crossReactions,
   });
+
+  /// URL to this taxon's distribution maps on kasviatlas.fi, or null if none.
+  String? get kasviatlasUrl => kasviatlasKey == null
+      ? null
+      : 'https://kasviatlas.fi/lajit/?key=${Uri.encodeComponent(kasviatlasKey!)}&year=2023';
 
   bool get hasLiveForecast => openMeteoVar != null;
 
@@ -205,6 +216,7 @@ class Allergen {
         relevanceFi: j['relevanceFi'] as String,
         description: j['description'] as String,
         descriptionFi: j['descriptionFi'] as String?,
+        kasviatlasKey: j['kasviatlasKey'] as String?,
         season: Season.fromJson(j['season'] as Map<String, dynamic>),
         thresholds: Thresholds.fromJson(j['thresholds'] as Map<String, dynamic>),
         crossReactions:

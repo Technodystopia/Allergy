@@ -200,6 +200,33 @@ void main() {
     expect(reloaded.flaggedFoods, isEmpty);
   });
 
+  test('food tri-state cycles and persists', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final state = _state([FakeSource('openmeteo')], prefs);
+
+    expect(state.foodStatus('kiwi'), FoodStatus.none);
+    await state.cycleFood('kiwi');
+    expect(state.foodStatus('kiwi'), FoodStatus.caution);
+    await state.cycleFood('kiwi');
+    expect(state.foodStatus('kiwi'), FoodStatus.avoid);
+
+    final reloaded = _state([FakeSource('openmeteo')], prefs);
+    expect(reloaded.foodStatus('kiwi'), FoodStatus.avoid);
+    await reloaded.cycleFood('kiwi'); // back to none → removed
+    expect(reloaded.isFoodFlagged('kiwi'), false);
+  });
+
+  test('legacy food notes migrate to avoid', () async {
+    // Old format: a bare note string per food meant "avoid".
+    SharedPreferences.setMockInitialValues(
+        {'flutter.food_intolerances': '{"apple":"winter ok"}'});
+    final prefs = await SharedPreferences.getInstance();
+    final state = _state([FakeSource('openmeteo')], prefs);
+    expect(state.foodStatus('apple'), FoodStatus.avoid);
+    expect(state.foodNote('apple'), 'winter ok');
+  });
+
   test('allergen selection persists', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();

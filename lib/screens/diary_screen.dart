@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
 import '../widgets.dart';
+import 'food_screen.dart';
 
 /// Colours for the 4 severity levels (green → red).
 const _sevColors = [
@@ -13,8 +14,56 @@ const _sevColors = [
   Color(0xFFE53935),
 ];
 
+/// The Diary tab is a personal hub: everything "about me", click-to-open.
 class DiaryScreen extends StatelessWidget {
   const DiaryScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final s = state.s;
+
+    Widget tile(IconData icon, String title, String sub, Widget screen,
+            {String? trailing}) =>
+        Card(
+          child: ListTile(
+            leading: Icon(icon),
+            title: Text(title),
+            subtitle: Text(sub),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (trailing != null)
+                  Text(trailing,
+                      style: Theme.of(context).textTheme.labelLarge),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+            onTap: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => screen)),
+          ),
+        );
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        tile(Icons.spa_outlined, s.myAllergens, s.myAllergensSub,
+            const MyAllergensScreen(),
+            trailing: '${state.selectedIds.length}'),
+        tile(Icons.restaurant_menu, s.foodCatalogTitle, s.crossReactionsSub,
+            const FoodCatalogScreen(),
+            trailing: '${state.flaggedFoods.length}'),
+        tile(Icons.event_note, s.symptomDiary, s.symptomDiarySub,
+            const DailyTrackerScreen(),
+            trailing: '${state.diary.length}'),
+      ],
+    );
+  }
+}
+
+/// Day-by-day symptom log (the original diary), now reached from the hub.
+class DailyTrackerScreen extends StatelessWidget {
+  const DailyTrackerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +72,7 @@ class DiaryScreen extends StatelessWidget {
     final entries = state.diary;
 
     return Scaffold(
+      appBar: AppBar(title: Text(s.symptomDiary)),
       body: Column(
         children: [
           const _DiaryGlance(),
@@ -274,6 +324,39 @@ class _EntryCard extends StatelessWidget {
           tooltip: s.delete,
           onPressed: () => state.deleteDiaryEntry(entry.dayKey),
         ),
+      ),
+    );
+  }
+}
+
+/// The allergens you track — toggle which pollens are "yours".
+class MyAllergensScreen extends StatelessWidget {
+  const MyAllergensScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final s = state.s;
+    return Scaffold(
+      appBar: AppBar(title: Text(s.myAllergens)),
+      body: ListView(
+        padding: const EdgeInsets.all(8),
+        children: state.catalog.allergens.map((a) {
+          final selected = state.selectedIds.contains(a.id);
+          return Card(
+            child: ListTile(
+              leading: Text(a.emoji, style: const TextStyle(fontSize: 26)),
+              title: Text(s.allergenName(a)),
+              subtitle: RelevanceChip(a.relevanceFi),
+              trailing: IconButton(
+                icon: Icon(selected ? Icons.star : Icons.star_border,
+                    color: selected ? Colors.amber : null),
+                tooltip: selected ? s.removeAllergen : s.addAllergen,
+                onPressed: () => state.toggleAllergen(a.id),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

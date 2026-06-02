@@ -67,7 +67,8 @@ class AppState extends ChangeNotifier {
   AppLang _lang = AppLang.en;
   List<SymptomEntry> _diary = [];
   List<String>? _enabledAreas; // null = all areas shown
-  Map<String, String> _foodNotes = {}; // flagged OAS food → personal note
+  // Cross-reaction food → personal stance + note.
+  Map<String, ({FoodStatus status, String note})> _foods = {};
   AppLocation? _gpsLocation;
 
   /// True while a GPS fix is being acquired.
@@ -166,32 +167,48 @@ class AppState extends ChangeNotifier {
         _kDiary, json.encode(_diary.map((e) => e.toJson()).toList()));
   }
 
-  // --- personal food-intolerance catalogue (built from OAS cross-reactions) ---
+  // --- personal cross-reaction catalogue (built from OAS cross-reactions) ---
 
-  /// Foods the user has flagged as "I react to this" (avoid by default).
-  Set<String> get flaggedFoods => _foodNotes.keys.toSet();
-  bool isFoodFlagged(String food) => _foodNotes.containsKey(food);
-  String foodNote(String food) => _foodNotes[food] ?? '';
+  /// Foods the user has flagged (caution or avoid).
+  Set<String> get flaggedFoods => _foods.keys.toSet();
+  FoodStatus foodStatus(String food) => _foods[food]?.status ?? FoodStatus.none;
+  bool isFoodFlagged(String food) => _foods.containsKey(food);
+  String foodNote(String food) => _foods[food]?.note ?? '';
 
-  Future<void> toggleFood(String food) async {
-    if (_foodNotes.containsKey(food)) {
-      _foodNotes.remove(food);
+  Future<void> setFoodStatus(String food, FoodStatus status) async {
+    if (status == FoodStatus.none) {
+      _foods.remove(food);
     } else {
-      _foodNotes[food] = '';
+      _foods[food] = (status: status, note: _foods[food]?.note ?? '');
     }
     await _saveFoods();
     notifyListeners();
   }
 
-  /// Sets (and implicitly flags) a personal note for a food.
+  /// Cycle none → caution → avoid → none (for a quick tap).
+  Future<void> cycleFood(String food) async {
+    final next = FoodStatus.values[(foodStatus(food).index + 1) % 3];
+    await setFoodStatus(food, next);
+  }
+
+  /// Binary flag used by the quick chips (none ↔ avoid).
+  Future<void> toggleFood(String food) async =>
+      setFoodStatus(food, isFoodFlagged(food) ? FoodStatus.none : FoodStatus.avoid);
+
+  /// Sets a personal note (implicitly flags the food if it wasn't).
   Future<void> setFoodNote(String food, String note) async {
-    _foodNotes[food] = note;
+    final status = _foods[food]?.status ?? FoodStatus.caution;
+    _foods[food] = (status: status, note: note);
     await _saveFoods();
     notifyListeners();
   }
 
-  Future<void> _saveFoods() async =>
-      prefs.setString(_kFoods, json.encode(_foodNotes));
+  Future<void> _saveFoods() async => prefs.setString(
+      _kFoods,
+      json.encode({
+        for (final e in _foods.entries)
+          e.key: {'s': e.value.status.index, 'note': e.value.note}
+      }));
 
   PollenSource get currentSource =>
       sources.firstWhere((s) => s.id == _sourceId, orElse: () => sources.first);
@@ -238,10 +255,22 @@ class AppState extends ChangeNotifier {
     final foodsStr = prefs.getString(_kFoods);
     if (foodsStr != null) {
       try {
-        _foodNotes = (json.decode(foodsStr) as Map)
-            .map((k, v) => MapEntry(k as String, v as String));
+        final decoded = json.decode(foodsStr) as Map<String, dynamic>;
+        _foods = {};
+        decoded.forEach((k, v) {
+          if (v is String) {
+            // legacy format: a bare note string meant "avoid".
+            _foods[k] = (status: FoodStatus.avoid, note: v);
+          } else if (v is Map) {
+            final si = (v['s'] as int?) ?? FoodStatus.avoid.index;
+            _foods[k] = (
+              status: FoodStatus.values[si.clamp(0, 2)],
+              note: (v['note'] as String?) ?? '',
+            );
+          }
+        });
       } catch (_) {
-        _foodNotes = {};
+        _foods = {};
       }
     }
 

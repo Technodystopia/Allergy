@@ -328,6 +328,11 @@ class _BloomCard extends StatelessWidget {
                 child: Text(allergen.season.localizedNote(s.isFi),
                     style: Theme.of(context).textTheme.bodySmall),
               ),
+            if (allergen.kasviatlasUrl != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: AtlasLinkButton(allergen),
+              ),
           ],
         ),
       ),

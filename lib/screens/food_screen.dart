@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
 
-/// Personal food-intolerance catalogue, built from the OAS cross-reaction
-/// foods in the bundled data. Flag a food ("I react to this") and add a note
-/// for the exceptions that are still fine.
+const _cautionColor = Color(0xFFFB8C00); // orange — test with caution
+const _avoidColor = Color(0xFFE53935); // red — avoid
+
+/// Personal cross-reaction catalogue, built from the OAS cross-reaction foods
+/// in the bundled data. Each food cycles none → test-with-caution → avoid,
+/// with a note for the exceptions that are still fine.
 class FoodCatalogScreen extends StatelessWidget {
   const FoodCatalogScreen({super.key});
 
@@ -15,7 +18,6 @@ class FoodCatalogScreen extends StatelessWidget {
     final state = context.watch<AppState>();
     final s = state.s;
 
-    // Unique cross-reaction foods → the allergens they cross-react with.
     final foods = <String, List<Allergen>>{};
     for (final a in state.catalog.allergens) {
       for (final f in a.crossReactions.foods) {
@@ -23,12 +25,18 @@ class FoodCatalogScreen extends StatelessWidget {
       }
     }
 
-    // Flagged first, then alphabetical by localised name.
+    // Avoid first, then caution, then untracked; alphabetical within each.
+    int rank(String f) => switch (state.foodStatus(f)) {
+          FoodStatus.avoid => 0,
+          FoodStatus.caution => 1,
+          FoodStatus.none => 2,
+        };
     final keys = foods.keys.toList()
       ..sort((a, b) {
-        final fa = state.isFoodFlagged(a), fb = state.isFoodFlagged(b);
-        if (fa != fb) return fa ? -1 : 1;
-        return s.food(a).toLowerCase().compareTo(s.food(b).toLowerCase());
+        final r = rank(a).compareTo(rank(b));
+        return r != 0
+            ? r
+            : s.food(a).toLowerCase().compareTo(s.food(b).toLowerCase());
       });
 
     return Scaffold(
@@ -48,10 +56,8 @@ class FoodCatalogScreen extends StatelessWidget {
                   child: Text(s.foodCatalogHeader,
                       style: Theme.of(context).textTheme.bodySmall),
                 ),
-                ...keys.map((f) => _FoodTile(
-                      food: f,
-                      pollens: foods[f]!,
-                    )),
+                ...keys
+                    .map((f) => _FoodTile(food: f, pollens: foods[f]!)),
                 const SizedBox(height: 24),
               ],
             ),
@@ -68,39 +74,46 @@ class _FoodTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final s = state.s;
-    final flagged = state.isFoodFlagged(food);
+    final status = state.foodStatus(food);
     final note = state.foodNote(food);
     final pollenNames =
         pollens.map((a) => s.allergenName(a).split(' · ').first).join(', ');
 
-    final subtitle = flagged
-        ? (note.isNotEmpty ? note : s.foodAvoid)
-        : s.foodCrossWith(pollenNames);
+    final (IconData icon, Color? color) = switch (status) {
+      FoodStatus.avoid => (Icons.do_not_disturb_on, _avoidColor),
+      FoodStatus.caution => (Icons.warning_amber_rounded, _cautionColor),
+      FoodStatus.none => (Icons.radio_button_unchecked, null),
+    };
+
+    final subtitle = status == FoodStatus.none
+        ? s.foodCrossWith(pollenNames)
+        : (note.isNotEmpty
+            ? '${s.foodStatusLabel(status)} · $note'
+            : s.foodStatusLabel(status));
 
     return Card(
-      color: flagged
-          ? Theme.of(context).colorScheme.secondaryContainer
-          : null,
+      color: color?.withValues(alpha: 0.14),
       child: ListTile(
-        leading: Checkbox(
-          value: flagged,
-          onChanged: (_) => state.toggleFood(food),
+        leading: IconButton(
+          icon: Icon(icon, color: color ?? Colors.grey),
+          tooltip: s.foodStatusLabel(status),
+          onPressed: () => state.cycleFood(food),
         ),
         title: Text(s.food(food)),
         subtitle: Text(subtitle,
             style: TextStyle(
-                fontStyle: flagged && note.isNotEmpty
-                    ? FontStyle.normal
-                    : FontStyle.italic)),
-        isThreeLine: flagged && note.isNotEmpty,
-        trailing: flagged
-            ? IconButton(
+                fontStyle: status == FoodStatus.none
+                    ? FontStyle.italic
+                    : FontStyle.normal)),
+        isThreeLine: status != FoodStatus.none && note.isNotEmpty,
+        trailing: status == FoodStatus.none
+            ? null
+            : IconButton(
                 icon: const Icon(Icons.edit_note),
                 tooltip: s.foodNoteHint,
                 onPressed: () => _editNote(context, state, food),
-              )
-            : null,
-        onTap: () => state.toggleFood(food),
+              ),
+        onTap: () => state.cycleFood(food),
       ),
     );
   }

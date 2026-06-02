@@ -1,8 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'app_state.dart';
 import 'models.dart';
+
+/// "View local growth atlas" link → kasviatlas.fi distribution maps for the
+/// taxon. Renders nothing if the allergen has no atlas key.
+class AtlasLinkButton extends StatelessWidget {
+  final Allergen allergen;
+  const AtlasLinkButton(this.allergen, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = allergen.kasviatlasUrl;
+    if (url == null) return const SizedBox.shrink();
+    final s = context.watch<AppState>().s;
+    return TextButton.icon(
+      icon: const Icon(Icons.public, size: 18),
+      label: Text(s.viewAtlas),
+      onPressed: () => launchUrl(Uri.parse(url),
+          mode: LaunchMode.externalApplication),
+    );
+  }
+}
 
 /// Small coloured pill showing a pollen level (localised).
 class LevelBadge extends StatelessWidget {

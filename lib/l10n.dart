@@ -124,15 +124,27 @@ class L10n {
   String get removeAllergen =>
       _('Remove from my allergens', 'Poista allergeeneista');
 
-  // --- food intolerance catalogue ---
-  String get foodCatalogTitle => _('My food list', 'Oma ruokalista');
+  // --- cross-reaction catalogue ---
+  String get foodCatalogTitle => _('Cross reactions', 'Ristireaktiot');
   String foodCatalogOpen(int n) => n > 0
-      ? _('My food list ($n)', 'Oma ruokalista ($n)')
-      : _('My food list', 'Oma ruokalista');
+      ? _('Cross reactions ($n)', 'Ristireaktiot ($n)')
+      : _('Cross reactions', 'Ristireaktiot');
   String get foodCatalogHeader => _(
-      'Flag a food you react to. Add a note for the exceptions that are still fine — e.g. “winter apples ok, brand XYZ ok”. A flagged food means avoid by default.',
-      'Merkitse ruoka, jolle reagoit. Lisää muistiinpano poikkeuksista, jotka ovat silti ok — esim. ”talviomenat ok, merkki XYZ ok”. Merkitty ruoka tarkoittaa: vältä oletuksena.');
+      'Tap a food to mark it: “test with caution” (haven’t confirmed yet) or “avoid”. Add a note for the exceptions that are still fine — e.g. “winter apples ok, brand XYZ ok”.',
+      'Napauta ruokaa merkitäksesi: ”kokeile varoen” (et vielä varma) tai ”vältä”. Lisää muistiinpano poikkeuksista, jotka ovat silti ok — esim. ”talviomenat ok, merkki XYZ ok”.');
   String get foodAvoid => _('Avoid', 'Vältä');
+  String get foodCaution => _('Test with caution', 'Kokeile varoen');
+  String foodStatusLabel(FoodStatus s) {
+    switch (s) {
+      case FoodStatus.caution:
+        return foodCaution;
+      case FoodStatus.avoid:
+        return foodAvoid;
+      case FoodStatus.none:
+        return '';
+    }
+  }
+
   String get foodNoteHint =>
       _('Exceptions that are still fine', 'Poikkeukset, jotka ovat silti ok');
   String foodCrossWith(String pollens) =>
@@ -140,6 +152,18 @@ class L10n {
   String get foodEmpty => _(
       'No cross-reaction foods in the catalogue yet.',
       'Ei ristireagoivia ruokia luettelossa vielä.');
+  String get viewAtlas =>
+      _('View local growth atlas', 'Katso paikallinen kasviatlas');
+
+  // --- diary hub ---
+  String get myAllergens => _('My allergens', 'Omat allergeenit');
+  String get myAllergensSub =>
+      _('The pollens you track', 'Seuraamasi siitepölyt');
+  String get symptomDiary => _('Symptom diary', 'Oirepäiväkirja');
+  String get symptomDiarySub => _(
+      'Log how you feel, day by day', 'Kirjaa olosi päivä kerrallaan');
+  String get crossReactionsSub => _(
+      'Your foods to avoid or test', 'Vältettävät tai testattavat ruoat');
 
   // --- locations ---
   String get locations => _('Locations', 'Sijainnit');
