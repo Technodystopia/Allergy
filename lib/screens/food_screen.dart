@@ -85,12 +85,6 @@ class _FoodTile extends StatelessWidget {
       FoodStatus.none => (Icons.radio_button_unchecked, null),
     };
 
-    final subtitle = status == FoodStatus.none
-        ? s.foodCrossWith(pollenNames)
-        : (note.isNotEmpty
-            ? '${s.foodStatusLabel(status)} · $note'
-            : s.foodStatusLabel(status));
-
     return Card(
       color: color?.withValues(alpha: 0.14),
       child: ListTile(
@@ -100,11 +94,25 @@ class _FoodTile extends StatelessWidget {
           onPressed: () => state.cycleFood(food),
         ),
         title: Text(s.food(food)),
-        subtitle: Text(subtitle,
-            style: TextStyle(
-                fontStyle: status == FoodStatus.none
-                    ? FontStyle.italic
-                    : FontStyle.normal)),
+        // Line 1 always says what it cross-reacts with (+ your tag); line 2 is
+        // your note, so you remember why you tagged it.
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text.rich(TextSpan(children: [
+              TextSpan(text: s.foodCrossWith(pollenNames)),
+              if (status != FoodStatus.none)
+                TextSpan(
+                  text: '  ·  ${s.foodStatusLabel(status)}',
+                  style: TextStyle(
+                      color: color, fontWeight: FontWeight.w600),
+                ),
+            ])),
+            if (note.isNotEmpty)
+              Text(note,
+                  style: const TextStyle(fontStyle: FontStyle.italic)),
+          ],
+        ),
         isThreeLine: status != FoodStatus.none && note.isNotEmpty,
         trailing: status == FoodStatus.none
             ? null

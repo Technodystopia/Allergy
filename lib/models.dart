@@ -320,14 +320,20 @@ const kBodyAreas = [
   'bronchi',
 ];
 
+/// Time-of-day slots a symptom entry can belong to. 'day' is the legacy /
+/// unspecified slot; users pick morning or evening.
+const kDayParts = ['morning', 'evening'];
+
 class SymptomEntry {
   final String dayKey; // yyyy-MM-dd
+  final String part; // 'morning' | 'evening' | 'day' (legacy)
   final int severity; // 0 none · 1 mild · 2 moderate · 3 severe
   final int pollenRank; // worst PollenLevel.rank that day at log time (-1 unknown)
   final String note;
   final Set<String> areas; // bothered body areas (ids from kBodyAreas)
   const SymptomEntry({
     required this.dayKey,
+    this.part = 'day',
     required this.severity,
     required this.pollenRank,
     this.note = '',
@@ -336,6 +342,7 @@ class SymptomEntry {
 
   Map<String, dynamic> toJson() => {
         'day': dayKey,
+        if (part != 'day') 'part': part,
         'sev': severity,
         'rank': pollenRank,
         if (note.isNotEmpty) 'note': note,
@@ -344,6 +351,7 @@ class SymptomEntry {
 
   factory SymptomEntry.fromJson(Map<String, dynamic> j) => SymptomEntry(
         dayKey: j['day'] as String,
+        part: (j['part'] as String?) ?? 'day',
         severity: j['sev'] as int,
         pollenRank: (j['rank'] as int?) ?? -1,
         note: (j['note'] as String?) ?? '',

@@ -181,6 +181,30 @@ void main() {
     expect(reloaded.diary, isEmpty);
   });
 
+  test('morning and evening entries coexist, edit and delete per slot',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final state = _state([FakeSource('openmeteo')], prefs);
+
+    await state.logEntry(part: 'morning', severity: 1, note: 'am');
+    await state.logEntry(part: 'evening', severity: 3, note: 'pm');
+    expect(state.diary.length, 2);
+
+    // editing the morning slot replaces only it
+    await state.logEntry(part: 'morning', severity: 2, note: 'am2');
+    expect(state.diary.length, 2);
+    expect(state.diary.firstWhere((e) => e.part == 'morning').severity, 2);
+
+    // evening sorts before morning within the same day
+    expect(state.diary.first.part, 'evening');
+
+    final mk = state.diary.firstWhere((e) => e.part == 'morning').dayKey;
+    await state.deleteEntry(mk, 'morning');
+    expect(state.diary.length, 1);
+    expect(state.diary.first.part, 'evening');
+  });
+
   test('food intolerance flag + note persist across instances', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();

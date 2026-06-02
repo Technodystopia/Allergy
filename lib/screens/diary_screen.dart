@@ -5,6 +5,7 @@ import '../app_state.dart';
 import '../models.dart';
 import '../widgets.dart';
 import 'food_screen.dart';
+import 'stats_screen.dart';
 
 /// Colours for the 4 severity levels (green → red).
 const _sevColors = [
@@ -56,6 +57,7 @@ class DiaryScreen extends StatelessWidget {
         tile(Icons.event_note, s.symptomDiary, s.symptomDiarySub,
             const DailyTrackerScreen(),
             trailing: '${state.diary.length}'),
+        tile(Icons.insights, s.statsTitle, s.statsSub, const StatsScreen()),
       ],
     );
   }
@@ -175,12 +177,12 @@ class _DiaryGlance extends StatelessWidget {
   }
 }
 
-void _showLogSheet(BuildContext context, AppState state) {
+void _showLogSheet(BuildContext context, AppState state, {SymptomEntry? edit}) {
   final s = state.s;
-  final existing = state.todayEntry;
-  int severity = existing?.severity ?? 1;
-  final areas = {...?existing?.areas};
-  final noteCtrl = TextEditingController(text: existing?.note ?? '');
+  int severity = edit?.severity ?? 1;
+  final areas = {...?edit?.areas};
+  final noteCtrl = TextEditingController(text: edit?.note ?? '');
+  String part = (edit != null && edit.part != 'day') ? edit.part : state.defaultPart;
 
   showModalBottomSheet<void>(
     context: context,
@@ -202,10 +204,11 @@ void _showLogSheet(BuildContext context, AppState state) {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(s.logTitle,
+                      child: Text(
+                          edit == null ? s.logTitle : edit.dayKey,
                           style: Theme.of(ctx).textTheme.titleLarge),
                     ),
-                    if (state.lastLoggedEntry != null)
+                    if (edit == null && state.lastLoggedEntry != null)
                       TextButton.icon(
                         icon: const Icon(Icons.history, size: 18),
                         label: Text(s.copyYesterday),
@@ -221,6 +224,17 @@ void _showLogSheet(BuildContext context, AppState state) {
                   ],
                 ),
                 const SizedBox(height: 8),
+                // Morning / evening slot.
+                SegmentedButton<String>(
+                  segments: [
+                    for (final p in kDayParts)
+                      ButtonSegment(value: p, label: Text(s.dayPart(p))),
+                  ],
+                  selected: {kDayParts.contains(part) ? part : kDayParts.first},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (v) => setSheet(() => part = v.first),
+                ),
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   children: List.generate(4, (i) {
@@ -269,8 +283,17 @@ void _showLogSheet(BuildContext context, AppState state) {
                   alignment: Alignment.centerRight,
                   child: FilledButton(
                     onPressed: () async {
-                      await state.logToday(severity, noteCtrl.text.trim(),
-                          areas: areas);
+                      // If editing and the slot changed, drop the old one.
+                      if (edit != null && edit.part != part) {
+                        await state.deleteEntry(edit.dayKey, edit.part);
+                      }
+                      await state.logEntry(
+                        dayKey: edit?.dayKey,
+                        part: part,
+                        severity: severity,
+                        note: noteCtrl.text.trim(),
+                        areas: areas,
+                      );
                       if (ctx.mounted) Navigator.of(ctx).pop();
                     },
                     child: Text(s.save),
@@ -310,53 +333,88 @@ class _EntryCard extends StatelessWidget {
       if (entry.note.isNotEmpty) entry.note,
     ].join('\n');
 
+    final title = entry.part == 'day'
+        ? '${entry.dayKey} · ${s.severity(entry.severity)}'
+        : '${entry.dayKey} · ${s.dayPart(entry.part)} · ${s.severity(entry.severity)}';
+
     return Card(
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color,
-          radius: 8,
-        ),
-        title: Text('${entry.dayKey} · ${s.severity(entry.severity)}'),
+        leading: CircleAvatar(backgroundColor: color, radius: 8),
+        title: Text(title),
         subtitle: Text(subtitle),
         isThreeLine: areaText != null || entry.note.isNotEmpty,
+        onTap: () => _showLogSheet(context, state, edit: entry),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
           tooltip: s.delete,
-          onPressed: () => state.deleteDiaryEntry(entry.dayKey),
+          onPressed: () => state.deleteEntry(entry.dayKey, entry.part),
         ),
       ),
     );
   }
 }
 
-/// The allergens you track — toggle which pollens are "yours".
-class MyAllergensScreen extends StatelessWidget {
+/// The allergens you track — shows just yours by default, with a Mine/All
+/// toggle to add more.
+class MyAllergensScreen extends StatefulWidget {
   const MyAllergensScreen({super.key});
+
+  @override
+  State<MyAllergensScreen> createState() => _MyAllergensScreenState();
+}
+
+class _MyAllergensScreenState extends State<MyAllergensScreen> {
+  bool _showAll = false;
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final s = state.s;
+    final list = _showAll
+        ? state.catalog.allergens
+        : state.catalog.allergens
+            .where((a) => state.selectedIds.contains(a.id))
+            .toList();
+
     return Scaffold(
       appBar: AppBar(title: Text(s.myAllergens)),
       body: ListView(
         padding: const EdgeInsets.all(8),
-        children: state.catalog.allergens.map((a) {
-          final selected = state.selectedIds.contains(a.id);
-          return Card(
-            child: ListTile(
-              leading: Text(a.emoji, style: const TextStyle(fontSize: 26)),
-              title: Text(s.allergenName(a)),
-              subtitle: RelevanceChip(a.relevanceFi),
-              trailing: IconButton(
-                icon: Icon(selected ? Icons.star : Icons.star_border,
-                    color: selected ? Colors.amber : null),
-                tooltip: selected ? s.removeAllergen : s.addAllergen,
-                onPressed: () => state.toggleAllergen(a.id),
-              ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(value: false, label: Text(s.bloomMine)),
+                ButtonSegment(value: true, label: Text(s.bloomAll)),
+              ],
+              selected: {_showAll},
+              showSelectedIcon: false,
+              onSelectionChanged: (v) => setState(() => _showAll = v.first),
             ),
-          );
-        }).toList(),
+          ),
+          if (list.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(s.noAllergens, textAlign: TextAlign.center),
+            ),
+          ...list.map((a) {
+            final selected = state.selectedIds.contains(a.id);
+            return Card(
+              child: ListTile(
+                leading: Text(a.emoji, style: const TextStyle(fontSize: 26)),
+                title: Text(s.allergenName(a)),
+                subtitle: RelevanceChip(a.relevanceFi),
+                trailing: IconButton(
+                  icon: Icon(selected ? Icons.star : Icons.star_border,
+                      color: selected ? Colors.amber : null),
+                  tooltip: selected ? s.removeAllergen : s.addAllergen,
+                  onPressed: () => state.toggleAllergen(a.id),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

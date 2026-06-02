@@ -100,9 +100,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Diary entries, most recent first.
-  List<SymptomEntry> get diary =>
-      [..._diary]..sort((a, b) => b.dayKey.compareTo(a.dayKey));
+  /// Diary entries, most recent first (newest day first, evening before
+  /// morning within a day).
+  List<SymptomEntry> get diary {
+    int partRank(String p) => p == 'evening' ? 0 : (p == 'day' ? 1 : 2);
+    return [..._diary]..sort((a, b) {
+        final d = b.dayKey.compareTo(a.dayKey);
+        return d != 0 ? d : partRank(a.part).compareTo(partRank(b.part));
+      });
+  }
 
   String _dayKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -115,7 +121,7 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  /// Most recent entry on a day other than today — for "copy yesterday".
+  /// Most recent entry on a day other than today — for "copy last entry".
   SymptomEntry? get lastLoggedEntry {
     final key = _dayKey(DateTime.now());
     for (final e in diary) {
@@ -123,6 +129,9 @@ class AppState extends ChangeNotifier {
     }
     return null;
   }
+
+  /// The default time-of-day slot to log into, based on the clock.
+  String get defaultPart => DateTime.now().hour < 14 ? 'morning' : 'evening';
 
   /// Body areas to show in the diary (personalised); defaults to all.
   List<String> get enabledAreas =>
@@ -140,14 +149,29 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Logs (or replaces) today's symptom entry, snapshotting today's worst level.
-  Future<void> logToday(int severity, String note,
-      {Set<String> areas = const {}}) async {
-    final key = _dayKey(DateTime.now());
-    final rank = worstToday()?.level.rank ?? -1;
-    _diary.removeWhere((e) => e.dayKey == key);
+  /// Saves (creates or replaces) a symptom entry for a given day + time slot.
+  /// Defaults to today; snapshots today's worst level for new today-entries,
+  /// otherwise keeps any prior rank for that slot.
+  Future<void> logEntry({
+    String? dayKey,
+    String part = 'day',
+    required int severity,
+    String note = '',
+    Set<String> areas = const {},
+  }) async {
+    final key = dayKey ?? _dayKey(DateTime.now());
+    final isToday = key == _dayKey(DateTime.now());
+    final prior = _diary
+        .where((e) => e.dayKey == key && e.part == part)
+        .cast<SymptomEntry?>()
+        .firstWhere((_) => true, orElse: () => null);
+    final rank = isToday
+        ? (worstToday()?.level.rank ?? -1)
+        : (prior?.pollenRank ?? -1);
+    _diary.removeWhere((e) => e.dayKey == key && e.part == part);
     _diary.add(SymptomEntry(
         dayKey: key,
+        part: part,
         severity: severity,
         pollenRank: rank,
         note: note,
@@ -156,6 +180,19 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Back-compat convenience: log into today's [part] (default slot).
+  Future<void> logToday(int severity, String note,
+          {Set<String> areas = const {}, String part = 'day'}) =>
+      logEntry(part: part, severity: severity, note: note, areas: areas);
+
+  /// Removes a single entry (one day + slot).
+  Future<void> deleteEntry(String dayKey, String part) async {
+    _diary.removeWhere((e) => e.dayKey == dayKey && e.part == part);
+    await _saveDiary();
+    notifyListeners();
+  }
+
+  /// Removes all entries for a day.
   Future<void> deleteDiaryEntry(String dayKey) async {
     _diary.removeWhere((e) => e.dayKey == dayKey);
     await _saveDiary();

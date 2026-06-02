@@ -130,10 +130,10 @@ class L10n {
       ? _('Cross reactions ($n)', 'Ristireaktiot ($n)')
       : _('Cross reactions', 'Ristireaktiot');
   String get foodCatalogHeader => _(
-      'Tap a food to mark it: “test with caution” (haven’t confirmed yet) or “avoid”. Add a note for the exceptions that are still fine — e.g. “winter apples ok, brand XYZ ok”.',
-      'Napauta ruokaa merkitäksesi: ”kokeile varoen” (et vielä varma) tai ”vältä”. Lisää muistiinpano poikkeuksista, jotka ovat silti ok — esim. ”talviomenat ok, merkki XYZ ok”.');
+      'Tap a food to mark it: “consume with caution” or “avoid”. Add a note for why — e.g. “winter apples ok, brand XYZ ok” or “haven’t tried as an adult”.',
+      'Napauta ruokaa merkitäksesi: ”nauti varoen” tai ”vältä”. Lisää muistiinpano syystä — esim. ”talviomenat ok, merkki XYZ ok” tai ”en ole kokeillut aikuisena”.');
   String get foodAvoid => _('Avoid', 'Vältä');
-  String get foodCaution => _('Test with caution', 'Kokeile varoen');
+  String get foodCaution => _('Consume with caution', 'Nauti varoen');
   String foodStatusLabel(FoodStatus s) {
     switch (s) {
       case FoodStatus.caution:
@@ -154,6 +154,21 @@ class L10n {
       'Ei ristireagoivia ruokia luettelossa vielä.');
   String get viewAtlas =>
       _('View local growth atlas', 'Katso paikallinen kasviatlas');
+
+  // --- stats ---
+  String get statsTitle => _('Symptom stats', 'Oiretilastot');
+  String get statsSub =>
+      _('Yearly overview to show your doctor', 'Vuosikatsaus lääkärille');
+  String get statsHeader => _(
+      'Your logged symptom severity across the year. Each dot is an entry, coloured by time of day.',
+      'Kirjaamasi oireiden voimakkuus vuoden aikana. Jokainen piste on merkintä, väri kertoo vuorokaudenajan.');
+  String get statsEmpty =>
+      _('No entries this year yet.', 'Ei merkintöjä tältä vuodelta vielä.');
+  String get statsKnownAllergens =>
+      _('Known allergens', 'Tunnetut allergeenit');
+  String get statsKnownCross =>
+      _('Known cross-reactions', 'Tunnetut ristireaktiot');
+  String get statsNone => _('none', 'ei mitään');
 
   // --- diary hub ---
   String get myAllergens => _('My allergens', 'Omat allergeenit');
@@ -219,6 +234,16 @@ class L10n {
   String get cancel => _('Cancel', 'Peruuta');
   String get logToday => _('Log today', 'Kirjaa tänään');
   String get delete => _('Delete', 'Poista');
+  String dayPart(String p) {
+    switch (p) {
+      case 'morning':
+        return _('Morning', 'Aamu');
+      case 'evening':
+        return _('Evening', 'Ilta');
+      default:
+        return _('All day', 'Koko päivä');
+    }
+  }
   String pollenThatDay(String level) =>
       _('Pollen: $level', 'Siitepöly: $level');
   String get pollenUnknown => _('Pollen: n/a', 'Siitepöly: –');

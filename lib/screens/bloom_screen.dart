@@ -297,12 +297,7 @@ class _BloomCard extends StatelessWidget {
             Semantics(
               label: '${s.allergenName(allergen)}: ${s.stageLabel(stage)} — '
                   '${s.stageDesc(stage)}',
-              child: _SeasonBar(
-                  season: allergen.season,
-                  now: now,
-                  color: allergen.thresholds
-                      .levelFor(allergen.thresholds.high)
-                      .color),
+              child: _SeasonBar(season: allergen.season, now: now),
             ),
             const SizedBox(height: 6),
             const _MonthLabels(),
@@ -343,11 +338,11 @@ class _BloomCard extends StatelessWidget {
 class _SeasonBar extends StatelessWidget {
   final Season season;
   final DateTime now;
-  final Color color;
-  const _SeasonBar({required this.season, required this.now, required this.color});
+  const _SeasonBar({required this.season, required this.now});
 
   @override
   Widget build(BuildContext context) {
+    final faint = Colors.grey.withValues(alpha: 0.15);
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
@@ -362,31 +357,34 @@ class _SeasonBar extends StatelessWidget {
             children: [
               Row(
                 children: List.generate(12, (i) {
-                  final month = i + 1;
-                  final inSeason =
-                      month >= season.startMonth && month <= season.endMonth;
-                  final inPeak = month >= season.peakStartMonth &&
-                      month <= season.peakEndMonth;
+                  // Same tier colours as the calendar: peak=red,
+                  // early/late=orange, fading=yellow, none=faint.
+                  final tier = season.tierForMonth(i + 1);
                   return Expanded(
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 0.5),
                       decoration: BoxDecoration(
-                        color: inPeak
-                            ? color
-                            : inSeason
-                                ? color.withValues(alpha: 0.35)
-                                : Colors.grey.withValues(alpha: 0.15),
+                        color: _tierColors[tier] ?? faint,
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
                   );
                 }),
               ),
+              // "Now" marker — white with a dark outline so it stands out
+              // against any cell colour.
               Positioned(
-                left: nowX.clamp(0, w - 2),
-                top: -2,
-                bottom: -2,
-                child: Container(width: 2.5, color: Colors.black87),
+                left: (nowX - 2).clamp(0, w - 4),
+                top: -3,
+                bottom: -3,
+                child: Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.black87, width: 1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
             ],
           ),
