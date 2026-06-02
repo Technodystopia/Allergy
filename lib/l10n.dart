@@ -108,6 +108,13 @@ class L10n {
       'Yhdelläkään allergeeneistasi ei ole SILAM-karttakattavuutta. Lisää esim. koivu, leppä tai heinä.');
   String get mapLegend => _('grains/m³', 'kpl/m³');
   String get mapMyLocation => _('You', 'Sinä');
+  String get mapCloud => _('Cloud', 'Pilvi');
+  String get mapPick => _('Pick area', 'Valitse alue');
+  String get mapPickHint => _(
+      'Tap the map to pick your exact spot — zoom in for a neighbourhood.',
+      'Napauta karttaa valitaksesi tarkan kohdan — zoomaa lähemmäs kaupunginosaan.');
+  String get mapUseThis => _('Use this area', 'Käytä tätä aluetta');
+  String get mapResolving => _('Finding place…', 'Haetaan paikkaa…');
   String get mapLow => _('low', 'matala');
   String get mapHigh => _('high', 'korkea');
 

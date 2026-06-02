@@ -360,6 +360,25 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Sets the forecast point to a hand-picked spot (reverse-geocoded name),
+  /// reusing the GPS slot. Used by the map's "pick area" mode.
+  Future<void> setManualLocation(double lat, double lon, String name) async {
+    _gpsLocation = AppLocation(
+      id: 'gps',
+      nameFi: name,
+      region: 'Picked',
+      lat: lat,
+      lon: lon,
+      capitalRegion: false,
+    );
+    await prefs.setDouble(_kGpsLat, lat);
+    await prefs.setDouble(_kGpsLon, lon);
+    await prefs.setString(_kGpsName, name);
+    _currentId = 'gps';
+    notifyListeners();
+    await refresh();
+  }
+
   Future<void> toggleAllergen(String id) async {
     if (_selected.contains(id)) {
       _selected.remove(id);

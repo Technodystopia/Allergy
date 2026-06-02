@@ -33,11 +33,30 @@ class _MapScreenState extends State<MapScreen> {
   final _controller = MapController();
   String? _allergenId;
   int _dayOffset = 0;
+  bool _pickMode = false;
+  LatLng? _picked;
+  String? _pickedName;
+  bool _resolving = false;
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _onTapMap(AppState state, LatLng p) async {
+    setState(() {
+      _picked = p;
+      _pickedName = null;
+      _resolving = true;
+    });
+    final name =
+        await state.locationService.placeName(p.latitude, p.longitude);
+    if (!mounted) return;
+    setState(() {
+      _pickedName = name;
+      _resolving = false;
+    });
   }
 
   /// Allergens the user selected that SILAM can actually map.
@@ -98,11 +117,31 @@ class _MapScreenState extends State<MapScreen> {
 
     return Column(
       children: [
+        // Cloud ⇄ Pick-area toggle.
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-          child: Text(s.mapHeader, style: Theme.of(context).textTheme.bodySmall),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: SegmentedButton<bool>(
+            segments: [
+              ButtonSegment(
+                  value: false,
+                  label: Text(s.mapCloud),
+                  icon: const Icon(Icons.cloud_outlined, size: 16)),
+              ButtonSegment(
+                  value: true,
+                  label: Text(s.mapPick),
+                  icon: const Icon(Icons.touch_app_outlined, size: 16)),
+            ],
+            selected: {_pickMode},
+            showSelectedIcon: false,
+            onSelectionChanged: (v) => setState(() => _pickMode = v.first),
+          ),
         ),
-        // Allergen chips.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+          child: Text(_pickMode ? s.mapPickHint : s.mapHeader,
+              style: Theme.of(context).textTheme.bodySmall),
+        ),
+        // Allergen chips (which species' cloud to show, in both modes).
         SizedBox(
           height: 44,
           child: ListView(
@@ -122,26 +161,27 @@ class _MapScreenState extends State<MapScreen> {
             ],
           ),
         ),
-        // Day selector (time scrub).
-        SizedBox(
-          height: 40,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            children: [
-              for (var d = 0; d <= _maxDayOffset; d++)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(_dayLabel(d, s)),
-                    selected: d == _dayOffset,
-                    visualDensity: VisualDensity.compact,
-                    onSelected: (_) => setState(() => _dayOffset = d),
+        // Day selector (time scrub) — cloud mode only.
+        if (!_pickMode)
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              children: [
+                for (var d = 0; d <= _maxDayOffset; d++)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(_dayLabel(d, s)),
+                      selected: d == _dayOffset,
+                      visualDensity: VisualDensity.compact,
+                      onSelected: (_) => setState(() => _dayOffset = d),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
         Expanded(
           child: Stack(
             children: [
@@ -151,7 +191,10 @@ class _MapScreenState extends State<MapScreen> {
                   initialCenter: here,
                   initialZoom: 6,
                   minZoom: 3,
-                  maxZoom: 11,
+                  maxZoom: 13,
+                  onTap: _pickMode
+                      ? (_, latlng) => _onTapMap(state, latlng)
+                      : null,
                 ),
                 children: [
                   TileLayer(
@@ -194,6 +237,14 @@ class _MapScreenState extends State<MapScreen> {
                               color: Colors.black, size: 36),
                         ),
                       ),
+                      if (_picked != null)
+                        Marker(
+                          point: _picked!,
+                          width: 44,
+                          height: 44,
+                          child: const Icon(Icons.place,
+                              color: Color(0xFFE53935), size: 42),
+                        ),
                     ],
                   ),
                   RichAttributionWidget(
@@ -225,6 +276,49 @@ class _MapScreenState extends State<MapScreen> {
                   s: s,
                 ),
               ),
+              // Pick-area confirm card.
+              if (_pickMode && _picked != null)
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: Card(
+                    elevation: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.place, color: Color(0xFFE53935)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _resolving ? s.mapResolving : (_pickedName ?? ''),
+                              style: Theme.of(context).textTheme.titleSmall,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          FilledButton(
+                            onPressed: _resolving || _pickedName == null
+                                ? null
+                                : () async {
+                                    await state.setManualLocation(
+                                        _picked!.latitude,
+                                        _picked!.longitude,
+                                        _pickedName!);
+                                    if (!context.mounted) return;
+                                    setState(() {
+                                      _picked = null;
+                                      _pickMode = false;
+                                    });
+                                  },
+                            child: Text(s.mapUseThis),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

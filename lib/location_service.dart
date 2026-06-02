@@ -42,7 +42,7 @@ class LocationService {
           'Could not get a location fix — try again with a clear sky view.');
     }
 
-    final name = await _placeName(pos.latitude, pos.longitude);
+    final name = await placeName(pos.latitude, pos.longitude);
     return AppLocation(
       id: 'gps',
       nameFi: name,
@@ -53,22 +53,29 @@ class LocationService {
     );
   }
 
-  Future<String> _placeName(double lat, double lon) async {
+  /// Reverse-geocode a point to the most specific readable name available,
+  /// preferring the neighbourhood/district (e.g. "Pohjois-Haaga") and adding
+  /// the city for context ("Kamppi, Helsinki"). Falls back to coordinates.
+  Future<String> placeName(double lat, double lon) async {
     try {
       final marks = await placemarkFromCoordinates(lat, lon);
       if (marks.isNotEmpty) {
         final m = marks.first;
-        final n = m.locality?.isNotEmpty == true
+        final spot = [m.subLocality, m.thoroughfare]
+            .firstWhere((v) => v != null && v.isNotEmpty, orElse: () => null);
+        final city = m.locality?.isNotEmpty == true
             ? m.locality
             : (m.subAdministrativeArea?.isNotEmpty == true
                 ? m.subAdministrativeArea
                 : m.administrativeArea);
+        if (spot != null && city != null && spot != city) return '$spot, $city';
+        final n = spot ?? city;
         if (n != null && n.isNotEmpty) return n;
       }
     } catch (_) {
       // geocoding can fail offline / on some emulators — fall back to coords.
     }
-    return 'My location';
+    return '${lat.toStringAsFixed(3)}, ${lon.toStringAsFixed(3)}';
   }
 }
 
