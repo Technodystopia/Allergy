@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
 import '../models.dart';
@@ -38,6 +39,29 @@ class ReferenceScreen extends StatelessWidget {
             ),
           );
         }),
+        if (state.catalog.references.isNotEmpty) ...[
+          const Divider(height: 24),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+            child: Text(s.sources,
+                style: Theme.of(context).textTheme.titleMedium),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+            child: Text(s.sourcesSub,
+                style: Theme.of(context).textTheme.bodySmall),
+          ),
+          ...state.catalog.references.map((r) => Card(
+                child: ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.link),
+                  title: Text(r.title),
+                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  onTap: () => launchUrl(Uri.parse(r.url),
+                      mode: LaunchMode.externalApplication),
+                ),
+              )),
+        ],
         const SizedBox(height: 24),
       ],
     );

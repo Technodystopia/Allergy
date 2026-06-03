@@ -122,6 +122,10 @@ class L10n {
   String get refHeader => _(
       'Tap a plant for details and cross-reactions. Use the star to add it to your allergens.',
       'Napauta kasvia nähdäksesi tiedot ja ristireaktiot. Tähdellä lisäät sen allergeeneihisi.');
+  String get sources => _('Sources', 'Lähteet');
+  String get sourcesSub => _(
+      'Cross-reaction data compiled from these references — tap to read more.',
+      'Ristireaktiotiedot on koottu näistä lähteistä — napauta lukeaksesi lisää.');
   String get crossPollen => _('Cross-reacting pollen', 'Ristireagoiva siitepöly');
   String get noneNoted => _('None noted.', 'Ei tunnettuja.');
   String get crossFoods => _('Foods that may cross-react (oral allergy syndrome)',
@@ -175,7 +179,35 @@ class L10n {
       _('Known allergens', 'Tunnetut allergeenit');
   String get statsKnownCross =>
       _('Known cross-reactions', 'Tunnetut ristireaktiot');
+  String get statsOtherAllergies =>
+      _('Other allergies', 'Muut allergiat');
   String get statsNone => _('none', 'ei mitään');
+
+  // --- other (non-pollen) allergies ---
+  String get otherAllergiesTitle => _('Other allergies', 'Muut allergiat');
+  String get otherAllergiesSub => _(
+      'Food, medicine, animals — anything non-pollen',
+      'Ruoka, lääkkeet, eläimet — kaikki ei-siitepöly');
+  String get otherAllergiesEmpty => _(
+      'No other allergies added yet. Tap + to add one.',
+      'Ei muita allergioita vielä. Napauta + lisätäksesi.');
+  String get addAllergyTitle => _('Add allergy', 'Lisää allergia');
+  String get allergyNameHint =>
+      _('What are you allergic to?', 'Mille olet allerginen?');
+  String allergyCategory(String c) {
+    switch (c) {
+      case 'food':
+        return _('Food', 'Ruoka');
+      case 'medication':
+        return _('Medication', 'Lääke');
+      case 'animal':
+        return _('Animal', 'Eläin');
+      case 'environment':
+        return _('Environment', 'Ympäristö');
+      default:
+        return _('Other', 'Muu');
+    }
+  }
 
   // --- diary hub ---
   String get myAllergens => _('My allergens', 'Omat allergeenit');
@@ -441,7 +473,7 @@ class L10n {
     'swiss_chard': 'Lehtimangoldi',
     'parsley': 'Persilja',
     'coriander': 'Korianteri',
-    'cumin': 'Kumina',
+    'cumin': 'Roomankumina',
     'fennel': 'Fenkoli',
     'sunflower_seed': 'Auringonkukansiemen',
     'mango': 'Mango',
@@ -449,5 +481,18 @@ class L10n {
     'banana': 'Banaani',
     'cucumber': 'Kurkku',
     'zucchini': 'Kesäkurpitsa',
+    'apricot': 'Aprikoosi',
+    'nectarine': 'Nektariini',
+    'strawberry': 'Mansikka',
+    'walnut': 'Saksanpähkinä',
+    'brazil_nut': 'Parapähkinä',
+    'potato': 'Peruna',
+    'fig': 'Viikuna',
+    'pea': 'Herne',
+    'wheat': 'Vehnä',
+    'mustard': 'Sinappi',
+    'anise': 'Anis',
+    'caraway': 'Kumina',
+    'paprika': 'Paprika',
   };
 }

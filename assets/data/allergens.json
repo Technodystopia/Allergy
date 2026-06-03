@@ -46,10 +46,20 @@
         ],
         "foods": [
           "apple",
-          "hazelnut",
+          "pear",
           "peach",
+          "cherry",
+          "plum",
+          "apricot",
+          "nectarine",
+          "almond",
+          "hazelnut",
+          "walnut",
+          "carrot",
           "celery",
-          "carrot"
+          "potato",
+          "kiwi",
+          "soy"
         ]
       },
       "kasviatlasKey": "Leppä"
@@ -91,12 +101,20 @@
           "peach",
           "cherry",
           "plum",
+          "apricot",
+          "nectarine",
+          "strawberry",
+          "kiwi",
           "hazelnut",
           "almond",
+          "walnut",
+          "peanut",
+          "brazil_nut",
           "carrot",
           "celery",
-          "kiwi",
-          "soy"
+          "potato",
+          "soy",
+          "fig"
         ]
       },
       "kasviatlasKey": "Koivu"
@@ -135,9 +153,19 @@
         "foods": [
           "hazelnut",
           "apple",
+          "pear",
           "peach",
+          "cherry",
+          "plum",
+          "apricot",
+          "nectarine",
+          "almond",
+          "walnut",
           "carrot",
-          "celery"
+          "celery",
+          "kiwi",
+          "potato",
+          "soy"
         ]
       },
       "kasviatlasKey": "Pähkinäpensas"
@@ -169,15 +197,18 @@
         "veryHigh": 150
       },
       "crossReactions": {
-        "pollen": [
-          "mugwort"
-        ],
+        "pollen": [],
         "foods": [
           "tomato",
           "melon",
           "watermelon",
           "orange",
           "peanut",
+          "kiwi",
+          "potato",
+          "soy",
+          "pea",
+          "wheat",
           "swiss_chard"
         ]
       },
@@ -211,16 +242,19 @@
       },
       "crossReactions": {
         "pollen": [
-          "ragweed",
-          "grass"
+          "ragweed"
         ],
         "foods": [
           "celery",
           "carrot",
+          "fennel",
           "parsley",
           "coriander",
           "cumin",
-          "fennel",
+          "caraway",
+          "anise",
+          "mustard",
+          "paprika",
           "sunflower_seed",
           "mango",
           "chamomile"
@@ -259,12 +293,14 @@
           "mugwort"
         ],
         "foods": [
+          "banana",
+          "cucumber",
+          "zucchini",
           "melon",
           "watermelon",
           "honeydew",
-          "banana",
-          "cucumber",
-          "zucchini"
+          "chamomile",
+          "sunflower_seed"
         ]
       },
       "kasviatlasKey": "Tuoksukit"
@@ -299,6 +335,28 @@
         "pollen": [],
         "foods": []
       }
+    }
+  ],
+  "references": [
+    {
+      "title": "Siitepölytieto.fi – Ristiallergia",
+      "url": "https://www.siitepolytieto.fi/mika-allergia/ristiallergia"
+    },
+    {
+      "title": "Oloapteekki – Ristiallergia",
+      "url": "https://www.oloapteekki.fi/blog/post/ristiallergia"
+    },
+    {
+      "title": "Norkko – Aerobiologian yksikkö (Turun yliopisto)",
+      "url": "https://norkko.fi/"
+    },
+    {
+      "title": "Techniker Krankenkasse – Kreuzallergie",
+      "url": "https://www.tk.de/techniker/krankheit-und-behandlungen/erkrankungen/behandlungen-und-medizin/allergien-und-unvertraeglichkeiten/allergie/kreuzallergie-2013150"
+    },
+    {
+      "title": "AOK – Kreuzallergie",
+      "url": "https://www.aok.de/pk/magazin/koerper-psyche/haut-und-allergie/kreuzallergie-wenn-zur-pollen-eine-nahrungsmittelallergie-hinzukommt/"
     }
   ]
 }

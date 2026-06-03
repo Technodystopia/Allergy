@@ -8,7 +8,12 @@ import 'models.dart';
 class Catalog {
   final List<Allergen> allergens;
   final List<AppLocation> locations;
-  const Catalog({required this.allergens, required this.locations});
+  final List<({String title, String url})> references;
+  const Catalog({
+    required this.allergens,
+    required this.locations,
+    this.references = const [],
+  });
 
   static Future<Catalog> load() async {
     final aJson = json.decode(
@@ -22,7 +27,14 @@ class Catalog {
     final locations = (lJson['locations'] as List)
         .map((e) => AppLocation.fromJson(e as Map<String, dynamic>))
         .toList();
-    return Catalog(allergens: allergens, locations: locations);
+    final references = ((aJson['references'] as List?) ?? const [])
+        .map((e) => (
+              title: (e as Map<String, dynamic>)['title'] as String,
+              url: e['url'] as String,
+            ))
+        .toList();
+    return Catalog(
+        allergens: allergens, locations: locations, references: references);
   }
 
   Allergen byId(String id) => allergens.firstWhere((a) => a.id == id);

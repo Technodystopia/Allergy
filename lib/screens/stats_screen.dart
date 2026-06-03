@@ -165,6 +165,21 @@ class StatsScreen extends StatelessWidget {
                 ),
               );
             }),
+          if (state.otherAllergies.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(s.statsOtherAllergies,
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 6),
+            ...state.otherAllergies.map((a) => ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.warning_amber, size: 20),
+                  title: Text(a.name),
+                  subtitle: Text(a.note.isNotEmpty
+                      ? '${s.allergyCategory(a.category)} · ${a.note}'
+                      : s.allergyCategory(a.category)),
+                )),
+          ],
         ],
       ),
     );

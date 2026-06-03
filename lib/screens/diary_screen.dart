@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
 import '../widgets.dart';
+import 'allergies_screen.dart';
 import 'food_screen.dart';
 import 'stats_screen.dart';
 
@@ -54,6 +55,9 @@ class DiaryScreen extends StatelessWidget {
         tile(Icons.restaurant_menu, s.foodCatalogTitle, s.crossReactionsSub,
             const FoodCatalogScreen(),
             trailing: '${state.flaggedFoods.length}'),
+        tile(Icons.warning_amber, s.otherAllergiesTitle, s.otherAllergiesSub,
+            const MyAllergiesScreen(),
+            trailing: '${state.otherAllergies.length}'),
         tile(Icons.event_note, s.symptomDiary, s.symptomDiarySub,
             const DailyTrackerScreen(),
             trailing: '${state.diary.length}'),

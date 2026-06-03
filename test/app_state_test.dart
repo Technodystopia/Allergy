@@ -251,6 +251,30 @@ void main() {
     expect(state.foodNote('apple'), 'winter ok');
   });
 
+  test('other (non-pollen) allergies add, edit, persist, remove', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final state = _state([FakeSource('openmeteo')], prefs);
+
+    await state.addAllergy(
+        const OtherAllergy(name: 'Penicillin', category: 'medication'));
+    await state.addAllergy(const OtherAllergy(
+        name: 'Cat', category: 'animal', note: 'sneezing'));
+    expect(state.otherAllergies.length, 2);
+
+    await state.updateAllergy(
+        0, const OtherAllergy(name: 'Penicillin', category: 'medication', note: 'rash'));
+    expect(state.otherAllergies[0].note, 'rash');
+
+    final reloaded = _state([FakeSource('openmeteo')], prefs);
+    expect(reloaded.otherAllergies.length, 2);
+    expect(reloaded.otherAllergies[1].name, 'Cat');
+
+    await reloaded.removeAllergy(0);
+    expect(reloaded.otherAllergies.length, 1);
+    expect(reloaded.otherAllergies.first.name, 'Cat');
+  });
+
   test('allergen selection persists', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();

@@ -54,6 +54,7 @@ class AppState extends ChangeNotifier {
   static const _kDiary = 'symptom_diary';
   static const _kDiaryAreas = 'diary_areas';
   static const _kFoods = 'food_intolerances';
+  static const _kAllergies = 'other_allergies';
 
   Set<String> _selected = {};
   String _homeId = 'helsinki';
@@ -69,6 +70,7 @@ class AppState extends ChangeNotifier {
   List<String>? _enabledAreas; // null = all areas shown
   // Cross-reaction food → personal stance + note.
   Map<String, ({FoodStatus status, String note})> _foods = {};
+  List<OtherAllergy> _otherAllergies = []; // free-form non-pollen allergies
   AppLocation? _gpsLocation;
 
   /// True while a GPS fix is being acquired.
@@ -247,6 +249,33 @@ class AppState extends ChangeNotifier {
           e.key: {'s': e.value.status.index, 'note': e.value.note}
       }));
 
+  // --- free-form non-pollen allergies (food, meds, animals, …) ---
+
+  List<OtherAllergy> get otherAllergies => List.unmodifiable(_otherAllergies);
+
+  Future<void> addAllergy(OtherAllergy a) async {
+    _otherAllergies.add(a);
+    await _saveAllergies();
+    notifyListeners();
+  }
+
+  Future<void> updateAllergy(int index, OtherAllergy a) async {
+    if (index < 0 || index >= _otherAllergies.length) return;
+    _otherAllergies[index] = a;
+    await _saveAllergies();
+    notifyListeners();
+  }
+
+  Future<void> removeAllergy(int index) async {
+    if (index < 0 || index >= _otherAllergies.length) return;
+    _otherAllergies.removeAt(index);
+    await _saveAllergies();
+    notifyListeners();
+  }
+
+  Future<void> _saveAllergies() async => prefs.setString(
+      _kAllergies, json.encode(_otherAllergies.map((a) => a.toJson()).toList()));
+
   PollenSource get currentSource =>
       sources.firstWhere((s) => s.id == _sourceId, orElse: () => sources.first);
   String get sourceId => _sourceId;
@@ -308,6 +337,17 @@ class AppState extends ChangeNotifier {
         });
       } catch (_) {
         _foods = {};
+      }
+    }
+
+    final allergiesStr = prefs.getString(_kAllergies);
+    if (allergiesStr != null) {
+      try {
+        _otherAllergies = (json.decode(allergiesStr) as List)
+            .map((e) => OtherAllergy.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } catch (_) {
+        _otherAllergies = [];
       }
     }
 

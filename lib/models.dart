@@ -155,6 +155,37 @@ class Weather {
 /// (haven't confirmed yet), or known to avoid.
 enum FoodStatus { none, caution, avoid }
 
+/// Categories for a free-form, non-pollen allergy the user adds themselves.
+const kAllergyCategories = [
+  'food',
+  'medication',
+  'animal',
+  'environment',
+  'other'
+];
+
+/// A user-entered allergy that isn't a tracked pollen (e.g. penicillin, cats,
+/// shellfish). Free-form list kept in the diary.
+class OtherAllergy {
+  final String name;
+  final String category; // one of kAllergyCategories
+  final String note;
+  const OtherAllergy(
+      {required this.name, this.category = 'other', this.note = ''});
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'cat': category,
+        if (note.isNotEmpty) 'note': note,
+      };
+
+  factory OtherAllergy.fromJson(Map<String, dynamic> j) => OtherAllergy(
+        name: j['name'] as String,
+        category: (j['cat'] as String?) ?? 'other',
+        note: (j['note'] as String?) ?? '',
+      );
+}
+
 class CrossReactions {
   final List<String> pollen;
   final List<String> foods;
